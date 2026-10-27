@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Afacad:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap');
+@import 'tailwindcss';
+
+/* Bảng màu Gốm Sứ Xanh — lấy từ Figma style guide của bản cũ */
+@theme {
+  --color-forest: #1c3d1e;
+  --color-moss: #275129;
+  --color-leaf: #558b2f;
+  --color-sage: #94b578;
+  --color-mint: #c5e1a5;
+  --color-cream: #fffdf5;
+  --color-sand: #f0ede2;
+  --color-clay: #d4c5a9;
+  --color-teal: #2e7d60;
+  --color-teal-dark: #24644c;
+  --color-ink: #4a5d3a;
+  --color-muted: #7a8a6a;
+  --color-danger: #c62828;
+  --color-warning: #b26a00;
+
+  --font-sans: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Afacad', 'DM Sans', sans-serif;
+
+  --radius-organic: 28px 4px 28px 4px;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-sand font-sans text-forest antialiased;
+  min-height: 100vh;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-teal px-6 py-3 text-[15px] font-semibold text-cream shadow-sm transition-colors hover:bg-teal-dark disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-moss/30 px-5 py-2.5 text-sm font-semibold text-moss transition-colors hover:border-moss hover:bg-moss/5 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .link {
+    @apply font-semibold text-teal underline-offset-4 hover:text-teal-dark hover:underline;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
