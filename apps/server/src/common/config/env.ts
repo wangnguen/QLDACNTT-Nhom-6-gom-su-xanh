@@ -26,7 +26,25 @@ const databaseEnvSchema = z.object({
 })
 
 const authEnvSchema = z.object({
+  JWT_SECRET: z.string().min(32),
+  JWT_REFRESH_SECRET: z.string().min(32),
+  REFRESH_TOKEN_HASH_SECRET: z.string().min(32),
   AUTH_TOKEN_HASH_SECRET: z.string().min(32),
+  JWT_ACCESS_EXPIRES_IN: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(15 * 60),
+  JWT_REFRESH_EXPIRES_IN: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(7 * 24 * 60 * 60),
+  MAX_SESSION_LIFETIME_IN: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(30 * 24 * 60 * 60),
   OTP_EXPIRE_MINUTES: z.coerce.number().int().positive().default(10)
 })
 

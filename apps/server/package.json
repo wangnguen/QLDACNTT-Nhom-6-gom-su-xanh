@@ -14,7 +14,8 @@
     "typeorm": "node -r @swc-node/register ./node_modules/typeorm/cli.js",
     "migration:generate": "pnpm typeorm migration:generate -p -d src/databases/cli-data-source.ts",
     "migration:run": "pnpm typeorm migration:run -d src/databases/cli-data-source.ts",
-    "migration:revert": "pnpm typeorm migration:revert -d src/databases/cli-data-source.ts"
+    "migration:revert": "pnpm typeorm migration:revert -d src/databases/cli-data-source.ts",
+    "seed:admin": "node -r @swc-node/register src/databases/seeds/admin.seed.ts"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.5.0",
@@ -28,6 +29,7 @@
     "express-rate-limit": "^8.3.1",
     "helmet": "^8.1.0",
     "http-status-codes": "^2.3.0",
+    "jsonwebtoken": "^9.0.3",
     "nodemailer": "^8.0.7",
     "pg": "^8.20.0",
     "pino": "^10.3.1",
@@ -48,6 +50,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.5.0",
     "@types/nodemailer": "^8.0.0",
     "@types/pug": "^2.0.10",

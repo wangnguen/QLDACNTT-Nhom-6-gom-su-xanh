@@ -2,16 +2,27 @@ import { z } from 'zod/v4'
 
 import { registry } from '@docs/registry'
 
-import { RegisterBodySchema, ResendVerificationBodySchema, VerifyEmailBodySchema } from '@modules/auth/dto'
+import {
+  LoginBodyExample,
+  LoginBodyPhoneExample,
+  LoginBodySchema,
+  RegisterBodySchema,
+  ResendVerificationBodySchema,
+  VerifyEmailBodySchema
+} from '@modules/auth/dto'
 
 import {
+  AuthResponseSchema,
   AuthUserSchema,
+  TokenPairSchema,
   badRequestResponse,
   conflictResponse,
+  forbiddenResponse,
   jsonBody,
   nullSuccessResponse,
   rateLimitResponse,
   successWrapper,
+  unauthorizedResponse,
   validationErrorResponse
 } from './shared'
 
@@ -74,5 +85,120 @@ registry.registerPath({
     200: nullSuccessResponse('/auth/resend-verification', 'Nếu email chưa được xác thực, mã OTP mới đã được gửi'),
     422: validationErrorResponse(),
     429: rateLimitResponse()
+  }
+})
+
+// ─── US-02: Đăng nhập hệ thống ───────────────────────────────────────────────
+
+const loginExamples = {
+  email: { summary: 'Đăng nhập bằng email', value: LoginBodyExample },
+  phone: { summary: 'Đăng nhập bằng số điện thoại', value: LoginBodyPhoneExample }
+}
+
+const loginResponses = (path: string) => ({
+  200: {
+    description: 'Đăng nhập thành công. Refresh token được set vào httpOnly cookie.',
+    content: {
+      'application/json': {
+        schema: successWrapper(AuthResponseSchema, path, 200, 'Đăng nhập thành công')
+      }
+    }
+  },
+  401: unauthorizedResponse('Email/số điện thoại hoặc mật khẩu không đúng'),
+  422: validationErrorResponse(),
+  429: rateLimitResponse()
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/auth/login',
+  tags: ['Auth - Đăng nhập (US-02)'],
+  summary: 'Đăng nhập trang client',
+  description: 'Đăng nhập bằng email hoặc số điện thoại. Refresh token lưu trong cookie `rt`.',
+  request: jsonBody(LoginBodySchema, loginExamples),
+  responses: {
+    ...loginResponses('/auth/login'),
+    403: forbiddenResponse('Tài khoản chưa xác thực email')
+  }
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/auth/refresh-token',
+  tags: ['Auth - Đăng nhập (US-02)'],
+  summary: 'Cấp access token mới (client)',
+  description: 'Đọc refresh token từ cookie `rt`, trả access token mới và xoay vòng (rotate) refresh token.',
+  security: [{ refreshTokenAuth: [] }],
+  responses: {
+    200: {
+      description: 'Access token mới',
+      content: {
+        'application/json': {
+          schema: successWrapper(TokenPairSchema, '/auth/refresh-token', 200, 'Làm mới phiên đăng nhập thành công')
+        }
+      }
+    },
+    401: unauthorizedResponse('Phiên đăng nhập đã hết hạn')
+  }
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/auth/logout',
+  tags: ['Auth - Đăng nhập (US-02)'],
+  summary: 'Đăng xuất (client)',
+  security: [{ refreshTokenAuth: [] }],
+  responses: {
+    200: nullSuccessResponse('/auth/logout', 'Đăng xuất thành công')
+  }
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/auth/admin/login',
+  tags: ['Auth - Đăng nhập (US-02)'],
+  summary: 'Đăng nhập trang admin',
+  description:
+    'Chỉ tài khoản role `admin`. Refresh token lưu trong cookie `rt_admin`, tách biệt với phiên của trang client.',
+  request: jsonBody(LoginBodySchema, loginExamples),
+  responses: {
+    ...loginResponses('/auth/admin/login'),
+    403: forbiddenResponse('Tài khoản không có quyền truy cập trang quản trị')
+  }
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/auth/admin/refresh-token',
+  tags: ['Auth - Đăng nhập (US-02)'],
+  summary: 'Cấp access token mới (admin)',
+  security: [{ adminRefreshTokenAuth: [] }],
+  responses: {
+    200: {
+      description: 'Access token mới',
+      content: {
+        'application/json': {
+          schema: successWrapper(
+            TokenPairSchema,
+            '/auth/admin/refresh-token',
+            200,
+            'Làm mới phiên đăng nhập thành công'
+          )
+        }
+      }
+    },
+    401: unauthorizedResponse('Phiên đăng nhập đã hết hạn'),
+    403: forbiddenResponse('Tài khoản không có quyền truy cập trang quản trị')
+  }
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/auth/admin/logout',
+  tags: ['Auth - Đăng nhập (US-02)'],
+  summary: 'Đăng xuất (admin)',
+  security: [{ adminRefreshTokenAuth: [] }],
+  responses: {
+    200: nullSuccessResponse('/auth/admin/logout', 'Đăng xuất thành công')
   }
 })

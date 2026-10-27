@@ -1,5 +1,10 @@
 import { UserRole } from '@common/constants'
 
+export type AuthTokens = {
+  accessToken: string
+  refreshToken: string
+}
+
 export type AuthUser = {
   id: string
   email: string
@@ -8,6 +13,20 @@ export type AuthUser = {
   role: UserRole
   avatarUrl: string | null
   isEmailVerified: boolean
+}
+
+export type AuthResponse = AuthTokens & {
+  user: AuthUser
+}
+
+export type AccessTokenPayload = {
+  sub: string
+  email: string
+  role: string
+}
+
+export type RefreshTokenPayload = {
+  sub: string
 }
 
 export type EmailParams = {

@@ -1,7 +1,10 @@
 import { Request, Response } from 'express'
 
+import { env } from '@common/config'
+import { AuthScope, REFRESH_TOKEN_COOKIE_MAX_AGE_MS } from '@common/constants'
+
 import AuthService from './auth.service'
-import { RegisterBody, ResendVerificationBody, VerifyEmailBody } from './dto'
+import { LoginBody, RegisterBody, ResendVerificationBody, VerifyEmailBody } from './dto'
 
 class AuthController {
   static async register(req: Request, res: Response) {
@@ -20,6 +23,50 @@ class AuthController {
     await AuthService.resendVerification(req.body as ResendVerificationBody)
 
     return res.ok(null, { message: 'Nếu email chưa được xác thực, mã OTP mới đã được gửi' })
+  }
+
+  // login / refreshToken / logout dùng chung cho client và admin, khác nhau ở `scope` (cookie + quyền)
+  static login(scope: AuthScope) {
+    return async (req: Request, res: Response) => {
+      const { accessToken, refreshToken, user } = await AuthService.login(req.body as LoginBody, scope)
+
+      AuthController.setRefreshTokenCookie(res, scope, refreshToken)
+
+      return res.ok({ accessToken, user }, { message: 'Đăng nhập thành công' })
+    }
+  }
+
+  static refreshToken(scope: AuthScope) {
+    return async (req: Request, res: Response) => {
+      const { accessToken, refreshToken } = await AuthService.refreshToken(
+        req.cookies[scope.cookieName],
+        req.refreshUserId as string,
+        scope
+      )
+
+      AuthController.setRefreshTokenCookie(res, scope, refreshToken)
+
+      return res.ok({ accessToken }, { message: 'Làm mới phiên đăng nhập thành công' })
+    }
+  }
+
+  static logout(scope: AuthScope) {
+    return async (req: Request, res: Response) => {
+      await AuthService.logout(req.cookies[scope.cookieName])
+      res.clearCookie(scope.cookieName, { path: scope.cookiePath })
+
+      return res.ok(null, { message: 'Đăng xuất thành công' })
+    }
+  }
+
+  private static setRefreshTokenCookie(res: Response, scope: AuthScope, refreshToken: string) {
+    res.cookie(scope.cookieName, refreshToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: scope.cookiePath,
+      maxAge: REFRESH_TOKEN_COOKIE_MAX_AGE_MS
+    })
   }
 }
 

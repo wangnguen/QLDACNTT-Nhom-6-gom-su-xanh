@@ -1,9 +1,10 @@
 import { Router } from 'express'
 
-import { authRateLimiterMiddleware, validateBody } from '@common/middlewares'
+import { AUTH_SCOPE } from '@common/constants'
+import { AuthMiddleware, authRateLimiterMiddleware, validateBody } from '@common/middlewares'
 
 import AuthController from './auth.controller'
-import { RegisterBodySchema, ResendVerificationBodySchema, VerifyEmailBodySchema } from './dto'
+import { LoginBodySchema, RegisterBodySchema, ResendVerificationBodySchema, VerifyEmailBodySchema } from './dto'
 
 const router = Router()
 
@@ -16,5 +17,28 @@ router.post(
   validateBody(ResendVerificationBodySchema),
   AuthController.resendVerification
 )
+
+// US-02: Đăng nhập hệ thống — trang client
+router.post('/login', authRateLimiterMiddleware, validateBody(LoginBodySchema), AuthController.login(AUTH_SCOPE.CLIENT))
+router.post(
+  '/refresh-token',
+  AuthMiddleware.authenticateRefreshToken(AUTH_SCOPE.CLIENT),
+  AuthController.refreshToken(AUTH_SCOPE.CLIENT)
+)
+router.post('/logout', AuthController.logout(AUTH_SCOPE.CLIENT))
+
+// US-02: Đăng nhập hệ thống — trang admin (chỉ tài khoản role admin)
+router.post(
+  '/admin/login',
+  authRateLimiterMiddleware,
+  validateBody(LoginBodySchema),
+  AuthController.login(AUTH_SCOPE.ADMIN)
+)
+router.post(
+  '/admin/refresh-token',
+  AuthMiddleware.authenticateRefreshToken(AUTH_SCOPE.ADMIN),
+  AuthController.refreshToken(AUTH_SCOPE.ADMIN)
+)
+router.post('/admin/logout', AuthController.logout(AUTH_SCOPE.ADMIN))
 
 export default router

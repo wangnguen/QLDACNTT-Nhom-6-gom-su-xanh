@@ -96,6 +96,13 @@ export const nullSuccessResponse = (path: string, message: string) => ({
   }
 })
 
+export const TokenPairSchema = registry.register(
+  'AccessToken',
+  z.object({
+    accessToken: z.string().meta({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
+  })
+)
+
 export const AuthUserSchema = registry.register(
   'AuthUser',
   z.object({
@@ -106,5 +113,13 @@ export const AuthUserSchema = registry.register(
     role: z.enum(['user', 'admin']).meta({ example: 'user' }),
     avatarUrl: z.string().url().nullable().meta({ example: null }),
     isEmailVerified: z.boolean().meta({ example: true })
+  })
+)
+
+export const AuthResponseSchema = registry.register(
+  'AuthResponse',
+  z.object({
+    accessToken: z.string().meta({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' }),
+    user: AuthUserSchema
   })
 )

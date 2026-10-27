@@ -1,26 +1,31 @@
 import { instanceToPlain } from 'class-transformer'
 
-import { logger } from '@common/config'
+import { env, logger } from '@common/config'
 import {
   AUTH_TOKEN,
+  AuthScope,
   AuthTokenType,
   OTP_EXPIRE_MINUTES,
   OTP_LENGTH,
   OTP_MAX_ATTEMPTS,
-  OTP_RESEND_COOLDOWN_SECONDS
+  OTP_RESEND_COOLDOWN_SECONDS,
+  USER_ROLE
 } from '@common/constants'
-import { BadRequestError, ConflictError } from '@common/errors'
-import { EmailService } from '@common/services'
-import { AuthUser } from '@common/types'
-import { hashPassword } from '@common/utils/password'
+import { BadRequestError, ConflictError, ForbiddenError, UnauthorizedError } from '@common/errors'
+import { EmailService, JWTService } from '@common/services'
+import { AuthResponse, AuthTokens, AuthUser } from '@common/types'
+import { comparePassword, hashPassword } from '@common/utils/password'
 import { generateRandomDigits, hashAuthToken, safeEqual } from '@common/utils/random'
 
 import { AuthToken } from '@entities/auth-token.entity'
+import { User } from '@entities/user.entity'
 
 import AuthRepository, { OtpData } from './auth.repository'
-import { RegisterBody, ResendVerificationBody, VerifyEmailBody } from './dto'
+import { LoginBody, RegisterBody, ResendVerificationBody, VerifyEmailBody } from './dto'
 
 const INVALID_OTP_MESSAGE = 'Mã OTP không đúng hoặc đã hết hạn'
+const SESSION_EXPIRED_MESSAGE = 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại'
+const ADMIN_ONLY_MESSAGE = 'Tài khoản không có quyền truy cập trang quản trị'
 
 class AuthService {
   private static emailService = new EmailService()
@@ -75,6 +80,58 @@ class AuthService {
     }
   }
 
+  // US-02: Đăng nhập bằng email hoặc số điện thoại
+  static async login(dto: LoginBody, scope: AuthScope): Promise<AuthResponse> {
+    const user = await AuthRepository.findByEmailOrPhoneWithPassword(dto.identifier)
+    const isPasswordValid = !!user?.password && (await comparePassword(dto.password, user.password))
+    if (!user || !isPasswordValid) {
+      throw new UnauthorizedError('Email/số điện thoại hoặc mật khẩu không đúng')
+    }
+
+    if (scope.adminOnly && user.role !== USER_ROLE.ADMIN) throw new ForbiddenError(ADMIN_ONLY_MESSAGE)
+
+    if (!user.isEmailVerified) {
+      throw new ForbiddenError('Tài khoản chưa xác thực email. Vui lòng xác thực email trước khi đăng nhập')
+    }
+
+    const tokens = await AuthService.generateTokens(user)
+    return { ...tokens, user: instanceToPlain(user) as AuthUser }
+  }
+
+  static async refreshToken(currentRefreshToken: string, userId: string, scope: AuthScope): Promise<AuthTokens> {
+    const storedToken = await AuthRepository.findRefreshToken(JWTService.hashRefreshToken(currentRefreshToken))
+    if (!storedToken || storedToken.userId !== userId || storedToken.expiresAt < new Date()) {
+      throw new UnauthorizedError(SESSION_EXPIRED_MESSAGE)
+    }
+
+    if (storedToken.absoluteExpiresAt < new Date()) {
+      throw new UnauthorizedError(SESSION_EXPIRED_MESSAGE)
+    }
+
+    await AuthRepository.deleteRefreshTokenById(storedToken.id)
+
+    const user = await AuthRepository.findById(userId)
+    if (!user) throw new UnauthorizedError(SESSION_EXPIRED_MESSAGE)
+    if (scope.adminOnly && user.role !== USER_ROLE.ADMIN) throw new ForbiddenError(ADMIN_ONLY_MESSAGE)
+
+    const accessToken = JWTService.generateAccessToken({ sub: user.id, email: user.email, role: user.role })
+    const refreshToken = JWTService.generateRefreshToken({ sub: user.id })
+
+    await AuthRepository.saveRefreshToken({
+      tokenHash: JWTService.hashRefreshToken(refreshToken),
+      userId: user.id,
+      expiresAt: new Date(Date.now() + env.JWT_REFRESH_EXPIRES_IN * 1000),
+      absoluteExpiresAt: storedToken.absoluteExpiresAt
+    })
+
+    return { accessToken, refreshToken }
+  }
+
+  static async logout(refreshToken?: string): Promise<void> {
+    if (!refreshToken) return
+    await AuthRepository.deleteRefreshToken(JWTService.hashRefreshToken(refreshToken))
+  }
+
   // Tạo OTP mới (thay mã cũ). Trả về null nếu vừa gửi trong khoảng OTP_RESEND_COOLDOWN_SECONDS.
   private static async issueOtp(userId: string, type: AuthTokenType): Promise<string | null> {
     const latest = await AuthRepository.findLatestAuthToken(userId, type)
@@ -112,6 +169,29 @@ class AuthService {
   // Gửi mail không chờ kết quả: response trả về ngay, thời gian phản hồi không để lộ email có tồn tại hay không
   private static sendInBackground(sending: Promise<void>) {
     sending.catch((err) => logger.error(err, 'Failed to send email'))
+  }
+
+  private static async generateTokens(user: User): Promise<AuthTokens> {
+    const accessToken = JWTService.generateAccessToken({
+      sub: user.id,
+      email: user.email,
+      role: user.role
+    })
+
+    const refreshToken = JWTService.generateRefreshToken({
+      sub: user.id
+    })
+
+    await Promise.all([
+      AuthRepository.saveRefreshToken({
+        tokenHash: JWTService.hashRefreshToken(refreshToken),
+        userId: user.id,
+        expiresAt: new Date(Date.now() + env.JWT_REFRESH_EXPIRES_IN * 1000),
+        absoluteExpiresAt: new Date(Date.now() + env.MAX_SESSION_LIFETIME_IN * 1000)
+      }),
+      AuthRepository.updateLastLogin(user.id)
+    ])
+    return { accessToken, refreshToken }
   }
 }
 
