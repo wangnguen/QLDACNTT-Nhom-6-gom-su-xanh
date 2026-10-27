@@ -1,8 +1,12 @@
 import { http } from '../axios'
 import type {
   AuthResponse,
+  AuthUser,
+  ChangeEmailRequest,
+  ChangePasswordRequest,
   EmailRequest,
   LoginRequest,
+  OtpRequest,
   RefreshResponse,
   RegisterRequest,
   RegisterResponse,
@@ -49,6 +53,22 @@ export async function resetPassword(payload: ResetPasswordRequest): Promise<void
   await http.post('/auth/reset-password', payload, { skipAuth: true })
 }
 
+// US-04: Thay đổi email — gửi OTP tới email mới, sau đó xác nhận bằng OTP
+export async function requestChangeEmail(payload: ChangeEmailRequest): Promise<void> {
+  await http.post('/auth/change-email', payload)
+}
+
+export async function verifyChangeEmail(payload: OtpRequest): Promise<AuthUser> {
+  const { data } = await http.post<AuthUser>('/auth/change-email/verify', payload)
+  return data
+}
+
+// US-05: Thay đổi mật khẩu — server đăng xuất thiết bị khác, trả access token mới cho thiết bị này
+export async function changePassword(payload: ChangePasswordRequest): Promise<RefreshResponse> {
+  const { data } = await http.post<RefreshResponse>('/auth/change-password', payload)
+  return data
+}
+
 export const authService = {
   register,
   verifyEmail,
@@ -57,5 +77,8 @@ export const authService = {
   refreshToken,
   logout,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  requestChangeEmail,
+  verifyChangeEmail,
+  changePassword
 }

@@ -6,11 +6,15 @@ export interface ApiErrorBody {
   errors?: { field: string; message: string; code?: string }[]
 }
 
+export type Gender = 'male' | 'female' | 'other'
+
 export interface AuthUser {
   id: string
   email: string
   fullName: string
   phone: string | null
+  gender: Gender | null
+  address: string | null
   role: 'user' | 'admin'
   avatarUrl: string | null
   isEmailVerified: boolean
@@ -55,5 +59,27 @@ export interface ResetPasswordRequest {
   email: string
   otp: string
   password: string
+  confirmPassword: string
+}
+
+export interface UpdateProfileRequest {
+  fullName?: string
+  phone?: string
+  gender?: Gender | null
+  address?: string | null
+}
+
+export interface ChangeEmailRequest {
+  newEmail: string
+  password: string
+}
+
+export interface OtpRequest {
+  otp: string
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
   confirmPassword: string
 }
