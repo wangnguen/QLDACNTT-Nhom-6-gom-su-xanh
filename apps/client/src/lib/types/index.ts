@@ -66,3 +66,9 @@ export interface ChangeEmailRequest {
 export interface OtpRequest {
   otp: string
 }
+
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}

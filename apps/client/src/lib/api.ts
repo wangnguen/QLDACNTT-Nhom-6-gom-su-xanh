@@ -11,7 +11,8 @@ export type {
   LoginRequest,
   ResetPasswordRequest,
   ChangeEmailRequest,
-  OtpRequest
+  OtpRequest,
+  ChangePasswordRequest
 } from './types'
 
 export { authService } from './services/auth.service'

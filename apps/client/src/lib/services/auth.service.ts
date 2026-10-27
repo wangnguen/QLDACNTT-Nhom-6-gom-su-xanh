@@ -3,6 +3,7 @@ import type {
   AuthResponse,
   AuthUser,
   ChangeEmailRequest,
+  ChangePasswordRequest,
   EmailRequest,
   LoginRequest,
   OtpRequest,
@@ -62,6 +63,12 @@ export async function verifyChangeEmail(payload: OtpRequest): Promise<AuthUser> 
   return data
 }
 
+// US-05: Thay đổi mật khẩu — server đăng xuất thiết bị khác, trả access token mới cho thiết bị này
+export async function changePassword(payload: ChangePasswordRequest): Promise<RefreshResponse> {
+  const { data } = await http.post<RefreshResponse>('/auth/change-password', payload)
+  return data
+}
+
 export const authService = {
   register,
   verifyEmail,
@@ -72,5 +79,6 @@ export const authService = {
   forgotPassword,
   resetPassword,
   requestChangeEmail,
-  verifyChangeEmail
+  verifyChangeEmail,
+  changePassword
 }
