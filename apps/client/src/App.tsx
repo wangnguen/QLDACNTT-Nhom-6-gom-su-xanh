@@ -13,8 +13,11 @@ import VerifyEmailPage from './pages/auth/verify-email'
 import ForgotPasswordPage from './pages/auth/forgot-password'
 import ResetPasswordPage from './pages/auth/reset-password'
 
-import HomePage from './pages/home'
+import { AccountLayout } from './pages/account/components'
 import AccountPage from './pages/account'
+import ChangeEmailPage from './pages/account/change-email'
+
+import HomePage from './pages/home'
 import NotFoundPage from './pages/not-found'
 
 function App() {
@@ -75,16 +78,20 @@ function App() {
         />
         <Route path='/reset-password' element={<ResetPasswordPage />} />
 
+        {/* US-04 — tài khoản của tôi (cần đăng nhập) */}
         <Route
           path='/account'
           element={
             <ProtectedRoute>
               <AppLayout>
-                <AccountPage />
+                <AccountLayout />
               </AppLayout>
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<AccountPage />} />
+          <Route path='email' element={<ChangeEmailPage />} />
+        </Route>
 
         <Route path='*' element={<NotFoundPage />} />
       </Routes>

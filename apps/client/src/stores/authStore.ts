@@ -10,6 +10,7 @@ interface AuthState {
   initialized: boolean
 
   setAuth: (data: AuthResponse) => void
+  setUser: (user: AuthUser) => void
   logout: () => Promise<void>
   initAuth: () => Promise<void>
 }
@@ -24,6 +25,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.setItem(SESSION_FLAG, '1')
     set({ user: data.user, isAuthenticated: true })
   },
+
+  // Cập nhật thông tin hiển thị sau khi sửa hồ sơ / đổi email
+  setUser: (user: AuthUser) => set({ user }),
 
   logout: async () => {
     await authService.logout().catch(() => {})

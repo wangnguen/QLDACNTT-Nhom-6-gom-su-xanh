@@ -8,10 +8,13 @@ const PHONE_REGEX = /^0\d{9}$/
 export const PASSWORD_HINT = 'Ít nhất 8 ký tự, gồm chữ hoa, chữ thường, chữ số và ký tự đặc biệt'
 export const OTP_RESEND_SECONDS = 60
 
-const emailField = z.string().trim().min(1, 'Vui lòng nhập email').pipe(z.email('Email không hợp lệ'))
-const passwordField = z.string().regex(PASSWORD_REGEX, PASSWORD_MESSAGE)
-const otpField = z.string().regex(/^\d{6}$/, 'Vui lòng nhập đủ 6 chữ số của mã OTP')
-const confirmPasswordField = z.string().min(1, 'Vui lòng nhập lại mật khẩu')
+// Dùng chung với lib/schemas/account.ts
+export const emailField = z.string().trim().min(1, 'Vui lòng nhập email').pipe(z.email('Email không hợp lệ'))
+export const passwordField = z.string().regex(PASSWORD_REGEX, PASSWORD_MESSAGE)
+export const otpField = z.string().regex(/^\d{6}$/, 'Vui lòng nhập đủ 6 chữ số của mã OTP')
+export const confirmPasswordField = z.string().min(1, 'Vui lòng nhập lại mật khẩu')
+export const fullNameField = z.string().trim().min(1, 'Vui lòng nhập họ và tên').max(255, 'Họ tên tối đa 255 ký tự')
+export const phoneField = z.string().trim().regex(PHONE_REGEX, 'Số điện thoại gồm 10 chữ số, bắt đầu bằng 0')
 
 const passwordsMatch = {
   check: (d: { password: string; confirmPassword: string }) => d.password === d.confirmPassword,
@@ -32,9 +35,9 @@ export const loginSchema = z.object({
 
 export const registerSchema = z
   .object({
-    fullName: z.string().trim().min(1, 'Vui lòng nhập họ và tên').max(255, 'Họ tên tối đa 255 ký tự'),
+    fullName: fullNameField,
     email: emailField,
-    phone: z.string().trim().regex(PHONE_REGEX, 'Số điện thoại gồm 10 chữ số, bắt đầu bằng 0'),
+    phone: phoneField,
     password: passwordField,
     confirmPassword: confirmPasswordField,
     agree: z.boolean().refine((value) => value, 'Bạn cần đồng ý với điều khoản sử dụng')

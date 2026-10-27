@@ -57,3 +57,12 @@ export interface ResetPasswordRequest {
   password: string
   confirmPassword: string
 }
+
+export interface ChangeEmailRequest {
+  newEmail: string
+  password: string
+}
+
+export interface OtpRequest {
+  otp: string
+}

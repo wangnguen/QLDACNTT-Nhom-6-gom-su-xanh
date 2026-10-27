@@ -9,7 +9,9 @@ export type {
   VerifyEmailRequest,
   EmailRequest,
   LoginRequest,
-  ResetPasswordRequest
+  ResetPasswordRequest,
+  ChangeEmailRequest,
+  OtpRequest
 } from './types'
 
 export { authService } from './services/auth.service'
