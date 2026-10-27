@@ -1,0 +1,28 @@
+extends ../layouts/default
+include ../mixins/email
+
+block headerTitle
+  | Xác thực email
+
+block content
+  p.greeting
+    | Xin chào #{name},
+
+  p.description
+    | Cảm ơn bạn đã đăng ký tài khoản tại
+    strong= appName
+    | . Nhập mã bên dưới để hoàn tất xác thực email.
+
+  +codeBox(code)
+
+  +warningBox
+    | Mã có hiệu lực trong
+    strong  #{expireMinutes} phút
+    | . Không chia sẻ mã này cho bất kỳ ai.
+
+  +button('Mở trang xác thực', actionUrl)
+
+  +divider
+
+  p.description
+    | Nếu bạn không thực hiện đăng ký, hãy bỏ qua email này.

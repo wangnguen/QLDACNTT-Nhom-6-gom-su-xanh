@@ -1,0 +1,8 @@
+.footer-section
+  p.footer-text
+    | © 2026 #{appName}. Email này được gửi tự động, vui lòng không trả lời.
+  if supportEmail
+    p.footer-text
+      | Cần hỗ trợ? Liên hệ
+      |
+      a.footer-link(href=`mailto:${supportEmail}`)= supportEmail
