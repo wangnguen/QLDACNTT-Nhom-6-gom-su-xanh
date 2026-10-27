@@ -4,7 +4,14 @@ import { env } from '@common/config'
 import { AuthScope, REFRESH_TOKEN_COOKIE_MAX_AGE_MS } from '@common/constants'
 
 import AuthService from './auth.service'
-import { LoginBody, RegisterBody, ResendVerificationBody, VerifyEmailBody } from './dto'
+import {
+  ForgotPasswordBody,
+  LoginBody,
+  RegisterBody,
+  ResendVerificationBody,
+  ResetPasswordBody,
+  VerifyEmailBody
+} from './dto'
 
 class AuthController {
   static async register(req: Request, res: Response) {
@@ -57,6 +64,18 @@ class AuthController {
 
       return res.ok(null, { message: 'Đăng xuất thành công' })
     }
+  }
+
+  static async forgotPassword(req: Request, res: Response) {
+    await AuthService.forgotPassword(req.body as ForgotPasswordBody)
+
+    return res.ok(null, { message: 'Nếu email tồn tại trong hệ thống, mã OTP đặt lại mật khẩu đã được gửi' })
+  }
+
+  static async resetPassword(req: Request, res: Response) {
+    await AuthService.resetPassword(req.body as ResetPasswordBody)
+
+    return res.ok(null, { message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại' })
   }
 
   private static setRefreshTokenCookie(res: Response, scope: AuthScope, refreshToken: string) {

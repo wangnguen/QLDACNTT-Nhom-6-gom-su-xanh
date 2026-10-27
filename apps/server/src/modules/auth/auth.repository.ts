@@ -82,6 +82,15 @@ class AuthRepository {
     })
   }
 
+  // Đổi mật khẩu bằng OTP và đăng xuất mọi phiên đang mở của user
+  static resetPassword(userId: string, authTokenId: string, hashedPassword: string) {
+    return AppDataSource.getDataSource().transaction(async (manager) => {
+      await manager.getRepository(AuthToken).update(authTokenId, { usedAt: new Date() })
+      await manager.getRepository(User).update(userId, { password: hashedPassword })
+      await manager.getRepository(RefreshToken).delete({ userId })
+    })
+  }
+
   static updateLastLogin(id: string) {
     return this.userRepo.update(id, { lastLoginAt: new Date() })
   }

@@ -21,7 +21,14 @@ import { AuthToken } from '@entities/auth-token.entity'
 import { User } from '@entities/user.entity'
 
 import AuthRepository, { OtpData } from './auth.repository'
-import { LoginBody, RegisterBody, ResendVerificationBody, VerifyEmailBody } from './dto'
+import {
+  ForgotPasswordBody,
+  LoginBody,
+  RegisterBody,
+  ResendVerificationBody,
+  ResetPasswordBody,
+  VerifyEmailBody
+} from './dto'
 
 const INVALID_OTP_MESSAGE = 'Mã OTP không đúng hoặc đã hết hạn'
 const SESSION_EXPIRED_MESSAGE = 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại'
@@ -130,6 +137,25 @@ class AuthService {
   static async logout(refreshToken?: string): Promise<void> {
     if (!refreshToken) return
     await AuthRepository.deleteRefreshToken(JWTService.hashRefreshToken(refreshToken))
+  }
+
+  // US-03: Quên mật khẩu → gửi OTP; luôn trả về thành công để không lộ email nào đã đăng ký
+  static async forgotPassword({ email }: ForgotPasswordBody): Promise<void> {
+    const user = await AuthRepository.findByEmail(email)
+    if (!user?.isEmailVerified) return
+
+    const otp = await AuthService.issueOtp(user.id, AUTH_TOKEN.RESET_PASSWORD)
+    if (otp) {
+      AuthService.sendInBackground(AuthService.emailService.sendResetPasswordOtp(user.email, otp, user.fullName))
+    }
+  }
+
+  static async resetPassword({ email, otp, password }: ResetPasswordBody): Promise<void> {
+    const user = await AuthRepository.findByEmail(email)
+    if (!user?.isEmailVerified) throw new BadRequestError(INVALID_OTP_MESSAGE)
+
+    const authToken = await AuthService.verifyOtp(user.id, AUTH_TOKEN.RESET_PASSWORD, otp)
+    await AuthRepository.resetPassword(user.id, authToken.id, await hashPassword(password))
   }
 
   // Tạo OTP mới (thay mã cũ). Trả về null nếu vừa gửi trong khoảng OTP_RESEND_COOLDOWN_SECONDS.

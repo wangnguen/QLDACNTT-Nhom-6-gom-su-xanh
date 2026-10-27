@@ -3,11 +3,13 @@ import { z } from 'zod/v4'
 import { registry } from '@docs/registry'
 
 import {
+  ForgotPasswordBodySchema,
   LoginBodyExample,
   LoginBodyPhoneExample,
   LoginBodySchema,
   RegisterBodySchema,
   ResendVerificationBodySchema,
+  ResetPasswordBodySchema,
   VerifyEmailBodySchema
 } from '@modules/auth/dto'
 
@@ -200,5 +202,39 @@ registry.registerPath({
   security: [{ adminRefreshTokenAuth: [] }],
   responses: {
     200: nullSuccessResponse('/auth/admin/logout', 'Đăng xuất thành công')
+  }
+})
+
+// ─── US-03: Quên mật khẩu ────────────────────────────────────────────────────
+
+registry.registerPath({
+  method: 'post',
+  path: '/auth/forgot-password',
+  tags: ['Auth - Quên mật khẩu (US-03)'],
+  summary: 'Gửi mã OTP đặt lại mật khẩu',
+  description: 'Luôn trả về thành công (không lộ email đã đăng ký hay chưa). Mỗi email chỉ được gửi lại sau 60 giây.',
+  request: jsonBody(ForgotPasswordBodySchema),
+  responses: {
+    200: nullSuccessResponse(
+      '/auth/forgot-password',
+      'Nếu email tồn tại trong hệ thống, mã OTP đặt lại mật khẩu đã được gửi'
+    ),
+    422: validationErrorResponse(),
+    429: rateLimitResponse()
+  }
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/auth/reset-password',
+  tags: ['Auth - Quên mật khẩu (US-03)'],
+  summary: 'Đặt lại mật khẩu bằng mã OTP',
+  description: 'Đặt mật khẩu mới và đăng xuất mọi phiên đăng nhập đang mở của tài khoản.',
+  request: jsonBody(ResetPasswordBodySchema),
+  responses: {
+    200: nullSuccessResponse('/auth/reset-password', 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại'),
+    400: badRequestResponse('Mã OTP không đúng hoặc đã hết hạn'),
+    422: validationErrorResponse(),
+    429: rateLimitResponse()
   }
 })

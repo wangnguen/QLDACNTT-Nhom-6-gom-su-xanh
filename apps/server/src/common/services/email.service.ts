@@ -56,6 +56,19 @@ class EmailService {
     return this.sendOtpEmail(email, `[${env.APP_NAME}] Mã xác thực email của bạn`, html, code)
   }
 
+  async sendResetPasswordOtp(email: string, code: string, name?: string): Promise<void> {
+    const html = this.templateService.resetPassword({
+      name: name || 'bạn',
+      code,
+      actionUrl: `${env.CLIENT_URL}/reset-password?email=${encodeURIComponent(email)}`,
+      expireMinutes: OTP_EXPIRE_MINUTES,
+      appName: env.APP_NAME,
+      supportEmail: env.MAIL_FROM ?? env.SMTP_USER
+    })
+
+    return this.sendOtpEmail(email, `[${env.APP_NAME}] Mã đặt lại mật khẩu`, html, code)
+  }
+
   private async sendOtpEmail(to: string, subject: string, html: string, code: string): Promise<void> {
     if (!this.sender) {
       logger.warn(`[DEV EMAIL] ${subject} → ${to} | OTP: ${code}`)

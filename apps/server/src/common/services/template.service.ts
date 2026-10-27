@@ -15,6 +15,10 @@ class TemplateService {
   verifyEmail(params: OtpEmailParams): string {
     return this.renderTemplate('auth/verify-email', params)
   }
+
+  resetPassword(params: OtpEmailParams): string {
+    return this.renderTemplate('auth/reset-password', params)
+  }
 }
 
 export default TemplateService

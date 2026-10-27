@@ -4,7 +4,14 @@ import { AUTH_SCOPE } from '@common/constants'
 import { AuthMiddleware, authRateLimiterMiddleware, validateBody } from '@common/middlewares'
 
 import AuthController from './auth.controller'
-import { LoginBodySchema, RegisterBodySchema, ResendVerificationBodySchema, VerifyEmailBodySchema } from './dto'
+import {
+  ForgotPasswordBodySchema,
+  LoginBodySchema,
+  RegisterBodySchema,
+  ResendVerificationBodySchema,
+  ResetPasswordBodySchema,
+  VerifyEmailBodySchema
+} from './dto'
 
 const router = Router()
 
@@ -40,5 +47,19 @@ router.post(
   AuthController.refreshToken(AUTH_SCOPE.ADMIN)
 )
 router.post('/admin/logout', AuthController.logout(AUTH_SCOPE.ADMIN))
+
+// US-03: Quên mật khẩu
+router.post(
+  '/forgot-password',
+  authRateLimiterMiddleware,
+  validateBody(ForgotPasswordBodySchema),
+  AuthController.forgotPassword
+)
+router.post(
+  '/reset-password',
+  authRateLimiterMiddleware,
+  validateBody(ResetPasswordBodySchema),
+  AuthController.resetPassword
+)
 
 export default router
