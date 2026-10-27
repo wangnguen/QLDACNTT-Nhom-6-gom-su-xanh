@@ -18,6 +18,18 @@ const passwordsMatch = {
   params: { message: 'Mật khẩu xác nhận không khớp', path: ['confirmPassword'] }
 }
 
+export const loginSchema = z.object({
+  identifier: z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng nhập email hoặc số điện thoại')
+    .refine(
+      (value) => z.email().safeParse(value).success || PHONE_REGEX.test(value),
+      'Email hoặc số điện thoại không hợp lệ'
+    ),
+  password: z.string().min(1, 'Vui lòng nhập mật khẩu')
+})
+
 export const registerSchema = z
   .object({
     fullName: z.string().trim().min(1, 'Vui lòng nhập họ và tên').max(255, 'Họ tên tối đa 255 ký tự'),
@@ -34,5 +46,6 @@ export const verifyEmailSchema = z.object({
   otp: otpField
 })
 
+export type LoginInput = z.infer<typeof loginSchema>
 export type RegisterInput = z.infer<typeof registerSchema>
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>

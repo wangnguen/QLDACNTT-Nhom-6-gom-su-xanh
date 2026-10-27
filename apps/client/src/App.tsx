@@ -7,6 +7,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { GuestRoute } from './components/GuestRoute'
 import { AppLayout } from './components/layout/AppLayout'
 
+import LoginPage from './pages/auth/login'
 import RegisterPage from './pages/auth/register'
 import VerifyEmailPage from './pages/auth/verify-email'
 
@@ -37,7 +38,15 @@ function App() {
           }
         />
 
-        {/* US-01 — chỉ dành cho khách chưa đăng nhập */}
+        {/* US-01, US-02 — chỉ dành cho khách chưa đăng nhập */}
+        <Route
+          path='/login'
+          element={
+            <GuestRoute>
+              <LoginPage />
+            </GuestRoute>
+          }
+        />
         <Route
           path='/register'
           element={
