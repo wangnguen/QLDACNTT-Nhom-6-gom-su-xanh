@@ -5,11 +5,14 @@ import { AuthMiddleware, authRateLimiterMiddleware, validateBody } from '@common
 
 import AuthController from './auth.controller'
 import {
+  ChangeEmailBodySchema,
+  ChangePasswordBodySchema,
   ForgotPasswordBodySchema,
   LoginBodySchema,
   RegisterBodySchema,
   ResendVerificationBodySchema,
   ResetPasswordBodySchema,
+  VerifyChangeEmailBodySchema,
   VerifyEmailBodySchema
 } from './dto'
 
@@ -60,6 +63,31 @@ router.post(
   authRateLimiterMiddleware,
   validateBody(ResetPasswordBodySchema),
   AuthController.resetPassword
+)
+
+// US-04: Thay đổi email (đã đăng nhập) — gửi OTP tới email mới, rồi xác nhận bằng OTP
+router.post(
+  '/change-email',
+  authRateLimiterMiddleware,
+  AuthMiddleware.authenticate,
+  validateBody(ChangeEmailBodySchema),
+  AuthController.requestChangeEmail
+)
+router.post(
+  '/change-email/verify',
+  authRateLimiterMiddleware,
+  AuthMiddleware.authenticate,
+  validateBody(VerifyChangeEmailBodySchema),
+  AuthController.verifyChangeEmail
+)
+
+// US-05: Thay đổi mật khẩu (đã đăng nhập) — thu hồi mọi refresh token và cấp lại cho thiết bị hiện tại
+router.post(
+  '/change-password',
+  authRateLimiterMiddleware,
+  AuthMiddleware.authenticate,
+  validateBody(ChangePasswordBodySchema),
+  AuthController.changePassword
 )
 
 export default router

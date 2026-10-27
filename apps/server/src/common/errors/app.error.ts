@@ -43,6 +43,12 @@ export class ConflictError extends AppError {
   }
 }
 
+export class TooManyRequestsError extends AppError {
+  constructor(message: string = ReasonPhrases.TOO_MANY_REQUESTS) {
+    super(StatusCodes.TOO_MANY_REQUESTS, message)
+  }
+}
+
 export class ValidationError extends AppError {
   constructor(public errors: ValidationErrorItem[]) {
     super(StatusCodes.UNPROCESSABLE_ENTITY, 'Dữ liệu không hợp lệ')

@@ -110,6 +110,8 @@ export const AuthUserSchema = registry.register(
     email: z.string().email().meta({ example: 'nguyenvanan@gmail.com' }),
     fullName: z.string().meta({ example: 'Nguyễn Văn An' }),
     phone: z.string().nullable().meta({ example: '0912345678' }),
+    gender: z.enum(['male', 'female', 'other']).nullable().meta({ example: 'male' }),
+    address: z.string().nullable().meta({ example: '12 Bát Tràng, Gia Lâm, Hà Nội' }),
     role: z.enum(['user', 'admin']).meta({ example: 'user' }),
     avatarUrl: z.string().url().nullable().meta({ example: null }),
     isEmailVerified: z.boolean().meta({ example: true })

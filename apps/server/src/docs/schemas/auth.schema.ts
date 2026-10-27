@@ -3,6 +3,8 @@ import { z } from 'zod/v4'
 import { registry } from '@docs/registry'
 
 import {
+  ChangeEmailBodySchema,
+  ChangePasswordBodySchema,
   ForgotPasswordBodySchema,
   LoginBodyExample,
   LoginBodyPhoneExample,
@@ -10,6 +12,7 @@ import {
   RegisterBodySchema,
   ResendVerificationBodySchema,
   ResetPasswordBodySchema,
+  VerifyChangeEmailBodySchema,
   VerifyEmailBodySchema
 } from '@modules/auth/dto'
 
@@ -19,6 +22,7 @@ import {
   TokenPairSchema,
   badRequestResponse,
   conflictResponse,
+  errorResponse,
   forbiddenResponse,
   jsonBody,
   nullSuccessResponse,
@@ -234,6 +238,87 @@ registry.registerPath({
   responses: {
     200: nullSuccessResponse('/auth/reset-password', 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại'),
     400: badRequestResponse('Mã OTP không đúng hoặc đã hết hạn'),
+    422: validationErrorResponse(),
+    429: rateLimitResponse()
+  }
+})
+
+// ─── US-04: Thay đổi email ───────────────────────────────────────────────────
+
+registry.registerPath({
+  method: 'post',
+  path: '/auth/change-email',
+  tags: ['Tài khoản - Đổi email (US-04)'],
+  summary: 'Gửi mã OTP tới email mới',
+  description: `Nhập email mới và **mật khẩu hiện tại**. Mã OTP 6 số được gửi tới email mới để chứng minh bạn sở hữu địa chỉ đó.
+
+Email đăng nhập chỉ thay đổi sau khi xác nhận mã ở \`POST /auth/change-email/verify\`. Mỗi lần gửi mã cách nhau tối thiểu 60 giây.`,
+  security: [{ bearerAuth: [] }],
+  request: jsonBody(ChangeEmailBodySchema),
+  responses: {
+    200: nullSuccessResponse('/auth/change-email', 'Mã xác nhận đã được gửi tới email mới'),
+    400: badRequestResponse('Mật khẩu không đúng'),
+    401: unauthorizedResponse('Thiếu hoặc sai access token'),
+    409: conflictResponse('Email này đã được sử dụng bởi tài khoản khác'),
+    422: validationErrorResponse(),
+    429: errorResponse(429, 'Gửi mã quá nhanh hoặc vượt rate limit', 'Vui lòng đợi 60 giây trước khi yêu cầu mã mới')
+  }
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/auth/change-email/verify',
+  tags: ['Tài khoản - Đổi email (US-04)'],
+  summary: 'Xác nhận đổi email bằng mã OTP',
+  description:
+    'Đổi email đăng nhập sang email mới và gửi thông báo về email cũ. Mã OTP có hiệu lực 10 phút, nhập sai quá 5 lần thì phải yêu cầu mã mới.',
+  security: [{ bearerAuth: [] }],
+  request: jsonBody(VerifyChangeEmailBodySchema),
+  responses: {
+    200: {
+      description: 'Đổi email thành công, trả về thông tin người dùng mới',
+      content: {
+        'application/json': {
+          schema: successWrapper(AuthUserSchema, '/auth/change-email/verify', 200, 'Đổi email thành công')
+        }
+      }
+    },
+    400: badRequestResponse('Mã OTP không đúng hoặc đã hết hạn'),
+    401: unauthorizedResponse('Thiếu hoặc sai access token'),
+    409: conflictResponse('Email này đã được sử dụng bởi tài khoản khác'),
+    422: validationErrorResponse(),
+    429: rateLimitResponse()
+  }
+})
+
+// ─── US-05: Thay đổi mật khẩu ────────────────────────────────────────────────
+
+registry.registerPath({
+  method: 'post',
+  path: '/auth/change-password',
+  tags: ['Tài khoản - Đổi mật khẩu (US-05)'],
+  summary: 'Đổi mật khẩu',
+  description: `Đổi mật khẩu khi đã đăng nhập. Mọi thiết bị khác bị đăng xuất; thiết bị hiện tại nhận access token mới và cookie \`rt\` mới nên vẫn giữ phiên.
+
+Một email thông báo được gửi tới chủ tài khoản.`,
+  security: [{ bearerAuth: [] }],
+  request: jsonBody(ChangePasswordBodySchema),
+  responses: {
+    200: {
+      description: 'Đổi mật khẩu thành công. Refresh token mới được set vào httpOnly cookie.',
+      content: {
+        'application/json': {
+          schema: successWrapper(
+            TokenPairSchema,
+            '/auth/change-password',
+            200,
+            'Đổi mật khẩu thành công. Các thiết bị khác đã được đăng xuất'
+          )
+        }
+      }
+    },
+    400: badRequestResponse('Mật khẩu hiện tại không đúng'),
+    401: unauthorizedResponse('Thiếu hoặc sai access token'),
     422: validationErrorResponse(),
     429: rateLimitResponse()
   }

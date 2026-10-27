@@ -11,7 +11,14 @@ import {
   OTP_RESEND_COOLDOWN_SECONDS,
   USER_ROLE
 } from '@common/constants'
-import { BadRequestError, ConflictError, ForbiddenError, UnauthorizedError } from '@common/errors'
+import {
+  BadRequestError,
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  TooManyRequestsError,
+  UnauthorizedError
+} from '@common/errors'
 import { EmailService, JWTService } from '@common/services'
 import { AuthResponse, AuthTokens, AuthUser } from '@common/types'
 import { comparePassword, hashPassword } from '@common/utils/password'
@@ -22,17 +29,21 @@ import { User } from '@entities/user.entity'
 
 import AuthRepository, { OtpData } from './auth.repository'
 import {
+  ChangeEmailBody,
+  ChangePasswordBody,
   ForgotPasswordBody,
   LoginBody,
   RegisterBody,
   ResendVerificationBody,
   ResetPasswordBody,
+  VerifyChangeEmailBody,
   VerifyEmailBody
 } from './dto'
 
 const INVALID_OTP_MESSAGE = 'Mã OTP không đúng hoặc đã hết hạn'
 const SESSION_EXPIRED_MESSAGE = 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại'
 const ADMIN_ONLY_MESSAGE = 'Tài khoản không có quyền truy cập trang quản trị'
+const USER_NOT_FOUND_MESSAGE = 'Không tìm thấy người dùng'
 
 class AuthService {
   private static emailService = new EmailService()
@@ -101,7 +112,7 @@ class AuthService {
       throw new ForbiddenError('Tài khoản chưa xác thực email. Vui lòng xác thực email trước khi đăng nhập')
     }
 
-    const tokens = await AuthService.generateTokens(user)
+    const [tokens] = await Promise.all([AuthService.generateTokens(user), AuthRepository.updateLastLogin(user.id)])
     return { ...tokens, user: instanceToPlain(user) as AuthUser }
   }
 
@@ -158,13 +169,80 @@ class AuthService {
     await AuthRepository.resetPassword(user.id, authToken.id, await hashPassword(password))
   }
 
+  // US-04: Đổi email — bước 1: xác nhận mật khẩu rồi gửi OTP tới email mới
+  static async requestChangeEmail(userId: string, { newEmail, password }: ChangeEmailBody): Promise<void> {
+    const user = await AuthService.findUserWithValidPassword(userId, password, 'Mật khẩu không đúng')
+    if (newEmail === user.email) throw new BadRequestError('Email mới phải khác email hiện tại')
+    await AuthService.findReleasableEmailOwner(newEmail, user.id)
+
+    const otp = await AuthService.issueOtp(user.id, AUTH_TOKEN.CHANGE_EMAIL, newEmail)
+    if (!otp) {
+      throw new TooManyRequestsError(`Vui lòng đợi ${OTP_RESEND_COOLDOWN_SECONDS} giây trước khi yêu cầu mã mới`)
+    }
+
+    await AuthService.emailService.sendChangeEmailOtp(newEmail, otp, user.fullName)
+  }
+
+  // US-04: Đổi email — bước 2: nhập OTP đã gửi tới email mới
+  static async verifyChangeEmail(userId: string, { otp }: VerifyChangeEmailBody): Promise<AuthUser> {
+    const user = await AuthRepository.findById(userId)
+    if (!user) throw new NotFoundError(USER_NOT_FOUND_MESSAGE)
+
+    const authToken = await AuthService.verifyOtp(user.id, AUTH_TOKEN.CHANGE_EMAIL, otp)
+    if (!authToken.newEmail) throw new BadRequestError(INVALID_OTP_MESSAGE)
+
+    // Kiểm tra lại: trong lúc chờ nhập mã, email mới có thể đã được tài khoản khác đăng ký và xác thực
+    const staleUserId = await AuthService.findReleasableEmailOwner(authToken.newEmail, user.id)
+    const updatedUser = await AuthRepository.changeEmail(user.id, authToken.id, authToken.newEmail, staleUserId)
+
+    AuthService.sendInBackground(
+      AuthService.emailService.sendEmailChangedNotice(user.email, updatedUser.email, user.fullName)
+    )
+
+    return instanceToPlain(updatedUser) as AuthUser
+  }
+
+  // US-05: Đổi mật khẩu — đăng xuất mọi thiết bị khác; thiết bị đang dùng nhận cặp token mới nên vẫn giữ phiên
+  static async changePassword(
+    userId: string,
+    { currentPassword, newPassword }: ChangePasswordBody
+  ): Promise<AuthTokens> {
+    const user = await AuthService.findUserWithValidPassword(userId, currentPassword, 'Mật khẩu hiện tại không đúng')
+    await AuthRepository.changePassword(user.id, await hashPassword(newPassword))
+
+    const tokens = await AuthService.generateTokens(user)
+    AuthService.sendInBackground(AuthService.emailService.sendPasswordChangedNotice(user.email, user.fullName))
+
+    return tokens
+  }
+
+  // Xác nhận lại mật khẩu trước thao tác nhạy cảm. Sai mật khẩu trả 400 (không phải 401)
+  // để client không hiểu nhầm là hết phiên đăng nhập.
+  private static async findUserWithValidPassword(userId: string, password: string, message: string): Promise<User> {
+    const user = await AuthRepository.findByIdWithPassword(userId)
+    if (!user) throw new NotFoundError(USER_NOT_FOUND_MESSAGE)
+
+    const isPasswordValid = !!user.password && (await comparePassword(password, user.password))
+    if (!isPasswordValid) throw new BadRequestError(message)
+
+    return user
+  }
+
+  // Email đã thuộc tài khoản khác: đã xác thực → báo trùng; chưa xác thực (đăng ký dở dang) → trả id để xoá, nhả email
+  private static async findReleasableEmailOwner(email: string, userId: string): Promise<string | undefined> {
+    const owner = await AuthRepository.findByEmail(email)
+    if (!owner || owner.id === userId) return undefined
+    if (owner.isEmailVerified) throw new ConflictError('Email này đã được sử dụng bởi tài khoản khác')
+    return owner.id
+  }
+
   // Tạo OTP mới (thay mã cũ). Trả về null nếu vừa gửi trong khoảng OTP_RESEND_COOLDOWN_SECONDS.
-  private static async issueOtp(userId: string, type: AuthTokenType): Promise<string | null> {
+  private static async issueOtp(userId: string, type: AuthTokenType, newEmail?: string): Promise<string | null> {
     const latest = await AuthRepository.findLatestAuthToken(userId, type)
     if (latest && Date.now() - latest.createdAt.getTime() < OTP_RESEND_COOLDOWN_SECONDS * 1000) return null
 
     const otp = generateRandomDigits(OTP_LENGTH)
-    await AuthRepository.replaceAuthToken(userId, AuthService.buildOtpData(otp, type))
+    await AuthRepository.replaceAuthToken(userId, AuthService.buildOtpData(otp, type, newEmail))
     return otp
   }
 
@@ -184,11 +262,12 @@ class AuthService {
     return authToken
   }
 
-  private static buildOtpData(otp: string, type: AuthTokenType): OtpData {
+  private static buildOtpData(otp: string, type: AuthTokenType, newEmail?: string): OtpData {
     return {
       tokenHash: hashAuthToken(otp),
       type,
-      expiresAt: new Date(Date.now() + OTP_EXPIRE_MINUTES * 60 * 1000)
+      expiresAt: new Date(Date.now() + OTP_EXPIRE_MINUTES * 60 * 1000),
+      newEmail
     }
   }
 
@@ -208,15 +287,12 @@ class AuthService {
       sub: user.id
     })
 
-    await Promise.all([
-      AuthRepository.saveRefreshToken({
-        tokenHash: JWTService.hashRefreshToken(refreshToken),
-        userId: user.id,
-        expiresAt: new Date(Date.now() + env.JWT_REFRESH_EXPIRES_IN * 1000),
-        absoluteExpiresAt: new Date(Date.now() + env.MAX_SESSION_LIFETIME_IN * 1000)
-      }),
-      AuthRepository.updateLastLogin(user.id)
-    ])
+    await AuthRepository.saveRefreshToken({
+      tokenHash: JWTService.hashRefreshToken(refreshToken),
+      userId: user.id,
+      expiresAt: new Date(Date.now() + env.JWT_REFRESH_EXPIRES_IN * 1000),
+      absoluteExpiresAt: new Date(Date.now() + env.MAX_SESSION_LIFETIME_IN * 1000)
+    })
     return { accessToken, refreshToken }
   }
 }

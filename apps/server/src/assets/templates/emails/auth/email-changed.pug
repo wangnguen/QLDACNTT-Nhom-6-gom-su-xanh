@@ -1,0 +1,17 @@
+extends ../layouts/default
+include ../mixins/email
+
+block headerTitle
+  | Email đăng nhập đã thay đổi
+
+block content
+  p.greeting
+    | Xin chào #{name},
+
+  p.description
+    | Email đăng nhập tài khoản #[strong #{appName}] của bạn đã được đổi sang #[strong #{newEmail}] lúc #{changedAt}. Từ giờ, hãy dùng email mới để đăng nhập.
+
+  +warningBox
+    | Nếu bạn không thực hiện thay đổi này, hãy liên hệ ngay với chúng tôi qua email hỗ trợ bên dưới để được khôi phục tài khoản.
+
+  +button('Đăng nhập', actionUrl)
