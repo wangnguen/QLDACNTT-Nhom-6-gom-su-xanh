@@ -46,6 +46,21 @@ export const verifyEmailSchema = z.object({
   otp: otpField
 })
 
+export const forgotPasswordSchema = z.object({
+  email: emailField
+})
+
+export const resetPasswordSchema = z
+  .object({
+    email: emailField,
+    otp: otpField,
+    password: passwordField,
+    confirmPassword: confirmPasswordField
+  })
+  .refine(passwordsMatch.check, passwordsMatch.params)
+
 export type LoginInput = z.infer<typeof loginSchema>
 export type RegisterInput = z.infer<typeof registerSchema>
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>
