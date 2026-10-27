@@ -2,7 +2,7 @@ import { join, resolve } from 'path'
 
 import pug from 'pug'
 
-import { OtpEmailParams } from '@common/types'
+import { EmailChangedParams, OtpEmailParams } from '@common/types'
 
 const TEMPLATES_DIR = resolve(__dirname, '../../assets/templates/emails')
 
@@ -18,6 +18,14 @@ class TemplateService {
 
   resetPassword(params: OtpEmailParams): string {
     return this.renderTemplate('auth/reset-password', params)
+  }
+
+  changeEmail(params: OtpEmailParams): string {
+    return this.renderTemplate('auth/change-email', params)
+  }
+
+  emailChanged(params: EmailChangedParams): string {
+    return this.renderTemplate('auth/email-changed', params)
   }
 }
 

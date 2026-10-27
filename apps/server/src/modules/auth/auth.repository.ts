@@ -12,6 +12,7 @@ export type OtpData = {
   tokenHash: string
   type: AuthTokenType
   expiresAt: Date
+  newEmail?: string
 }
 
 type UnverifiedUserData = Pick<User, 'fullName' | 'email' | 'phone' | 'password'> & { id?: string }
@@ -35,6 +36,10 @@ class AuthRepository {
       .addSelect('user.password')
       .where('user.email = :identifier OR user.phone = :identifier', { identifier })
       .getOne()
+  }
+
+  static findByIdWithPassword(id: string) {
+    return this.userRepo.createQueryBuilder('user').addSelect('user.password').where('user.id = :id', { id }).getOne()
   }
 
   /**
@@ -91,6 +96,23 @@ class AuthRepository {
     })
   }
 
+  /**
+   * Ghi email mới sau khi xác thực OTP.
+   * `staleUserId`: tài khoản chưa xác thực đang giữ email mới (đăng ký dở dang) — bị xoá để nhả email.
+   */
+  static changeEmail(userId: string, authTokenId: string, newEmail: string, staleUserId?: string) {
+    return AppDataSource.getDataSource().transaction(async (manager) => {
+      const userRepo = manager.getRepository(User)
+
+      if (staleUserId) await userRepo.delete({ id: staleUserId })
+
+      await manager.getRepository(AuthToken).update(authTokenId, { usedAt: new Date() })
+      await userRepo.update(userId, { email: newEmail })
+
+      return userRepo.findOneOrFail({ where: { id: userId } })
+    })
+  }
+
   static updateLastLogin(id: string) {
     return this.userRepo.update(id, { lastLoginAt: new Date() })
   }
@@ -121,7 +143,13 @@ class AuthRepository {
     const authTokenRepo = manager.getRepository(AuthToken)
     await authTokenRepo.delete({ userId, type: otp.type })
     await authTokenRepo.save(
-      authTokenRepo.create({ token: otp.tokenHash, type: otp.type, userId, expiresAt: otp.expiresAt })
+      authTokenRepo.create({
+        token: otp.tokenHash,
+        type: otp.type,
+        userId,
+        expiresAt: otp.expiresAt,
+        newEmail: otp.newEmail ?? null
+      })
     )
   }
 

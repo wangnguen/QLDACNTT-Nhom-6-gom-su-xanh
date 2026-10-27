@@ -40,3 +40,13 @@ export type OtpEmailParams = EmailParams & {
   code: string
   actionUrl: string
 }
+
+// Email thông báo bảo mật (đã đổi email / mật khẩu) — không có mã nên không cần thời hạn
+export type NoticeEmailParams = Omit<EmailParams, 'expireMinutes'> & {
+  actionUrl: string
+  changedAt: string
+}
+
+export type EmailChangedParams = NoticeEmailParams & {
+  newEmail: string
+}

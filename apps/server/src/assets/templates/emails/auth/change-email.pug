@@ -1,0 +1,24 @@
+extends ../layouts/default
+include ../mixins/email
+
+block headerTitle
+  | Xác nhận email mới
+
+block content
+  p.greeting
+    | Xin chào #{name},
+
+  p.description
+    | Bạn vừa yêu cầu đổi email đăng nhập tài khoản #[strong #{appName}] sang địa chỉ này. Nhập mã bên dưới để xác nhận.
+
+  +codeBox(code)
+
+  +warningBox
+    | Mã có hiệu lực trong #[strong #{expireMinutes} phút]. Không chia sẻ mã này cho bất kỳ ai.
+
+  +button('Mở trang đổi email', actionUrl)
+
+  +divider
+
+  p.description
+    | Nếu bạn không yêu cầu đổi email, hãy bỏ qua email này. Email đăng nhập của tài khoản sẽ không thay đổi.

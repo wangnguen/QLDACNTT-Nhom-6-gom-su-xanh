@@ -9,7 +9,8 @@ export type UserRole = (typeof USER_ROLE)[keyof typeof USER_ROLE]
 
 export const AUTH_TOKEN = {
   VERIFY_EMAIL: 'VERIFY_EMAIL',
-  RESET_PASSWORD: 'RESET_PASSWORD'
+  RESET_PASSWORD: 'RESET_PASSWORD',
+  CHANGE_EMAIL: 'CHANGE_EMAIL'
 } as const
 
 export type AuthTokenType = (typeof AUTH_TOKEN)[keyof typeof AUTH_TOKEN]
