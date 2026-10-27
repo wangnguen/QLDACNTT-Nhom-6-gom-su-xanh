@@ -10,6 +10,8 @@ import { AppLayout } from './components/layout/AppLayout'
 import LoginPage from './pages/auth/login'
 import RegisterPage from './pages/auth/register'
 import VerifyEmailPage from './pages/auth/verify-email'
+import ForgotPasswordPage from './pages/auth/forgot-password'
+import ResetPasswordPage from './pages/auth/reset-password'
 
 import HomePage from './pages/home'
 import AccountPage from './pages/account'
@@ -38,7 +40,7 @@ function App() {
           }
         />
 
-        {/* US-01, US-02 — chỉ dành cho khách chưa đăng nhập */}
+        {/* US-01, US-02, US-03 — chỉ dành cho khách chưa đăng nhập */}
         <Route
           path='/login'
           element={
@@ -63,6 +65,15 @@ function App() {
             </GuestRoute>
           }
         />
+        <Route
+          path='/forgot-password'
+          element={
+            <GuestRoute>
+              <ForgotPasswordPage />
+            </GuestRoute>
+          }
+        />
+        <Route path='/reset-password' element={<ResetPasswordPage />} />
 
         <Route
           path='/account'

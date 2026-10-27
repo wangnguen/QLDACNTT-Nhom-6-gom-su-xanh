@@ -6,6 +6,7 @@ import type {
   RefreshResponse,
   RegisterRequest,
   RegisterResponse,
+  ResetPasswordRequest,
   VerifyEmailRequest
 } from '../types'
 
@@ -39,11 +40,22 @@ export async function logout(): Promise<void> {
   await http.post('/auth/logout', undefined, { skipAuth: true })
 }
 
+// US-03: Quên mật khẩu
+export async function forgotPassword(payload: EmailRequest): Promise<void> {
+  await http.post('/auth/forgot-password', payload, { skipAuth: true })
+}
+
+export async function resetPassword(payload: ResetPasswordRequest): Promise<void> {
+  await http.post('/auth/reset-password', payload, { skipAuth: true })
+}
+
 export const authService = {
   register,
   verifyEmail,
   resendVerification,
   login,
   refreshToken,
-  logout
+  logout,
+  forgotPassword,
+  resetPassword
 }
