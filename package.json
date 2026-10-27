@@ -1,0 +1,27 @@
+{
+  "name": "gom-su-xanh",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Gốm Sứ Xanh — monorepo gồm server (Express + TypeORM), client và admin (React + Vite)",
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "dev:server": "pnpm --filter @gsx/server dev",
+    "dev:client": "pnpm --filter @gsx/client dev",
+    "dev:admin": "pnpm --filter @gsx/admin dev",
+    "build": "pnpm --filter \"./apps/*\" build",
+    "type-check": "pnpm --filter \"./apps/*\" type-check",
+    "lint": "pnpm --filter \"./apps/*\" lint",
+    "lint:fix": "pnpm --filter \"./apps/*\" lint:fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "migration:run": "pnpm --filter @gsx/server migration:run",
+    "seed:admin": "pnpm --filter @gsx/server seed:admin"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.1"
+  },
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=20"
+  }
+}
