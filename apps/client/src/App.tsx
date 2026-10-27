@@ -14,7 +14,7 @@ import ForgotPasswordPage from './pages/auth/forgot-password'
 import ResetPasswordPage from './pages/auth/reset-password'
 
 import { AccountLayout } from './pages/account/components'
-import AccountPage from './pages/account'
+import ProfilePage from './pages/account/profile'
 import ChangeEmailPage from './pages/account/change-email'
 import ChangePasswordPage from './pages/account/change-password'
 
@@ -79,7 +79,7 @@ function App() {
         />
         <Route path='/reset-password' element={<ResetPasswordPage />} />
 
-        {/* US-04, US-05 — tài khoản của tôi (cần đăng nhập) */}
+        {/* US-04, US-05, US-06 — tài khoản của tôi (cần đăng nhập) */}
         <Route
           path='/account'
           element={
@@ -90,7 +90,7 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<AccountPage />} />
+          <Route index element={<ProfilePage />} />
           <Route path='email' element={<ChangeEmailPage />} />
           <Route path='password' element={<ChangePasswordPage />} />
         </Route>

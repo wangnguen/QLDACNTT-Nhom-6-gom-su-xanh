@@ -1,5 +1,19 @@
 import { z } from 'zod'
-import { confirmPasswordField, emailField, otpField, passwordField } from './auth'
+import { confirmPasswordField, emailField, fullNameField, otpField, passwordField, phoneField } from './auth'
+
+export const GENDER_OPTIONS = [
+  { value: 'male', label: 'Nam' },
+  { value: 'female', label: 'Nữ' },
+  { value: 'other', label: 'Khác' }
+] as const
+
+// US-06: '' = chưa chọn giới tính / chưa nhập địa chỉ → gửi null lên server
+export const profileSchema = z.object({
+  fullName: fullNameField,
+  phone: phoneField,
+  gender: z.enum(['male', 'female', 'other']).or(z.literal('')),
+  address: z.string().trim().max(255, 'Địa chỉ tối đa 255 ký tự')
+})
 
 // US-04
 export const changeEmailSchema = z.object({
@@ -27,6 +41,7 @@ export const changePasswordSchema = z
     path: ['newPassword']
   })
 
+export type ProfileInput = z.infer<typeof profileSchema>
 export type ChangeEmailInput = z.infer<typeof changeEmailSchema>
 export type VerifyChangeEmailInput = z.infer<typeof verifyChangeEmailSchema>
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>

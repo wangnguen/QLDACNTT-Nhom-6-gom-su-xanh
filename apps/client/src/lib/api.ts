@@ -10,6 +10,8 @@ export type {
   EmailRequest,
   LoginRequest,
   ResetPasswordRequest,
+  Gender,
+  UpdateProfileRequest,
   ChangeEmailRequest,
   OtpRequest,
   ChangePasswordRequest
