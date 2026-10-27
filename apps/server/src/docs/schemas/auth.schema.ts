@@ -4,6 +4,7 @@ import { registry } from '@docs/registry'
 
 import {
   ChangeEmailBodySchema,
+  ChangePasswordBodySchema,
   ForgotPasswordBodySchema,
   LoginBodyExample,
   LoginBodyPhoneExample,
@@ -285,6 +286,39 @@ registry.registerPath({
     400: badRequestResponse('Mã OTP không đúng hoặc đã hết hạn'),
     401: unauthorizedResponse('Thiếu hoặc sai access token'),
     409: conflictResponse('Email này đã được sử dụng bởi tài khoản khác'),
+    422: validationErrorResponse(),
+    429: rateLimitResponse()
+  }
+})
+
+// ─── US-05: Thay đổi mật khẩu ────────────────────────────────────────────────
+
+registry.registerPath({
+  method: 'post',
+  path: '/auth/change-password',
+  tags: ['Tài khoản - Đổi mật khẩu (US-05)'],
+  summary: 'Đổi mật khẩu',
+  description: `Đổi mật khẩu khi đã đăng nhập. Mọi thiết bị khác bị đăng xuất; thiết bị hiện tại nhận access token mới và cookie \`rt\` mới nên vẫn giữ phiên.
+
+Một email thông báo được gửi tới chủ tài khoản.`,
+  security: [{ bearerAuth: [] }],
+  request: jsonBody(ChangePasswordBodySchema),
+  responses: {
+    200: {
+      description: 'Đổi mật khẩu thành công. Refresh token mới được set vào httpOnly cookie.',
+      content: {
+        'application/json': {
+          schema: successWrapper(
+            TokenPairSchema,
+            '/auth/change-password',
+            200,
+            'Đổi mật khẩu thành công. Các thiết bị khác đã được đăng xuất'
+          )
+        }
+      }
+    },
+    400: badRequestResponse('Mật khẩu hiện tại không đúng'),
+    401: unauthorizedResponse('Thiếu hoặc sai access token'),
     422: validationErrorResponse(),
     429: rateLimitResponse()
   }

@@ -1,11 +1,12 @@
 import { Request, Response } from 'express'
 
 import { env } from '@common/config'
-import { AuthScope, REFRESH_TOKEN_COOKIE_MAX_AGE_MS } from '@common/constants'
+import { AUTH_SCOPE, AuthScope, REFRESH_TOKEN_COOKIE_MAX_AGE_MS } from '@common/constants'
 
 import AuthService from './auth.service'
 import {
   ChangeEmailBody,
+  ChangePasswordBody,
   ForgotPasswordBody,
   LoginBody,
   RegisterBody,
@@ -90,6 +91,15 @@ class AuthController {
     const user = await AuthService.verifyChangeEmail(req.user!.id, req.body as VerifyChangeEmailBody)
 
     return res.ok(user, { message: 'Đổi email thành công' })
+  }
+
+  // Đổi mật khẩu chỉ có ở trang client → thay cookie `rt` bằng refresh token mới (các token cũ đã bị thu hồi)
+  static async changePassword(req: Request, res: Response) {
+    const { accessToken, refreshToken } = await AuthService.changePassword(req.user!.id, req.body as ChangePasswordBody)
+
+    AuthController.setRefreshTokenCookie(res, AUTH_SCOPE.CLIENT, refreshToken)
+
+    return res.ok({ accessToken }, { message: 'Đổi mật khẩu thành công. Các thiết bị khác đã được đăng xuất' })
   }
 
   private static setRefreshTokenCookie(res: Response, scope: AuthScope, refreshToken: string) {

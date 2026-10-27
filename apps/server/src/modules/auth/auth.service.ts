@@ -30,6 +30,7 @@ import { User } from '@entities/user.entity'
 import AuthRepository, { OtpData } from './auth.repository'
 import {
   ChangeEmailBody,
+  ChangePasswordBody,
   ForgotPasswordBody,
   LoginBody,
   RegisterBody,
@@ -111,7 +112,7 @@ class AuthService {
       throw new ForbiddenError('Tài khoản chưa xác thực email. Vui lòng xác thực email trước khi đăng nhập')
     }
 
-    const tokens = await AuthService.generateTokens(user)
+    const [tokens] = await Promise.all([AuthService.generateTokens(user), AuthRepository.updateLastLogin(user.id)])
     return { ...tokens, user: instanceToPlain(user) as AuthUser }
   }
 
@@ -201,6 +202,20 @@ class AuthService {
     return instanceToPlain(updatedUser) as AuthUser
   }
 
+  // US-05: Đổi mật khẩu — đăng xuất mọi thiết bị khác; thiết bị đang dùng nhận cặp token mới nên vẫn giữ phiên
+  static async changePassword(
+    userId: string,
+    { currentPassword, newPassword }: ChangePasswordBody
+  ): Promise<AuthTokens> {
+    const user = await AuthService.findUserWithValidPassword(userId, currentPassword, 'Mật khẩu hiện tại không đúng')
+    await AuthRepository.changePassword(user.id, await hashPassword(newPassword))
+
+    const tokens = await AuthService.generateTokens(user)
+    AuthService.sendInBackground(AuthService.emailService.sendPasswordChangedNotice(user.email, user.fullName))
+
+    return tokens
+  }
+
   // Xác nhận lại mật khẩu trước thao tác nhạy cảm. Sai mật khẩu trả 400 (không phải 401)
   // để client không hiểu nhầm là hết phiên đăng nhập.
   private static async findUserWithValidPassword(userId: string, password: string, message: string): Promise<User> {
@@ -272,15 +287,12 @@ class AuthService {
       sub: user.id
     })
 
-    await Promise.all([
-      AuthRepository.saveRefreshToken({
-        tokenHash: JWTService.hashRefreshToken(refreshToken),
-        userId: user.id,
-        expiresAt: new Date(Date.now() + env.JWT_REFRESH_EXPIRES_IN * 1000),
-        absoluteExpiresAt: new Date(Date.now() + env.MAX_SESSION_LIFETIME_IN * 1000)
-      }),
-      AuthRepository.updateLastLogin(user.id)
-    ])
+    await AuthRepository.saveRefreshToken({
+      tokenHash: JWTService.hashRefreshToken(refreshToken),
+      userId: user.id,
+      expiresAt: new Date(Date.now() + env.JWT_REFRESH_EXPIRES_IN * 1000),
+      absoluteExpiresAt: new Date(Date.now() + env.MAX_SESSION_LIFETIME_IN * 1000)
+    })
     return { accessToken, refreshToken }
   }
 }

@@ -107,6 +107,18 @@ class EmailService {
     return this.sendEmail(oldEmail, `[${env.APP_NAME}] Email đăng nhập đã được thay đổi`, html)
   }
 
+  async sendPasswordChangedNotice(email: string, name?: string): Promise<void> {
+    const html = this.templateService.passwordChanged({
+      name: name || 'bạn',
+      changedAt: formatDateTime(new Date()),
+      actionUrl: `${env.CLIENT_URL}/forgot-password`,
+      appName: env.APP_NAME,
+      supportEmail: env.MAIL_FROM ?? env.SMTP_USER
+    })
+
+    return this.sendEmail(email, `[${env.APP_NAME}] Mật khẩu đã được thay đổi`, html)
+  }
+
   private async sendEmail(to: string, subject: string, html: string, code?: string): Promise<void> {
     if (!this.sender) {
       logger.warn(`[DEV EMAIL] ${subject} → ${to}${code ? ` | OTP: ${code}` : ''}`)

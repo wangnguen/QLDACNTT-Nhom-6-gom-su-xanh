@@ -113,6 +113,14 @@ class AuthRepository {
     })
   }
 
+  // Đổi mật khẩu và thu hồi mọi refresh token — service cấp lại token cho thiết bị đang thao tác
+  static changePassword(userId: string, hashedPassword: string) {
+    return AppDataSource.getDataSource().transaction(async (manager) => {
+      await manager.getRepository(User).update(userId, { password: hashedPassword })
+      await manager.getRepository(RefreshToken).delete({ userId })
+    })
+  }
+
   static updateLastLogin(id: string) {
     return this.userRepo.update(id, { lastLoginAt: new Date() })
   }
