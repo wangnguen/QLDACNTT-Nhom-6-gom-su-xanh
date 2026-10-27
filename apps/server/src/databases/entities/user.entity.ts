@@ -1,7 +1,7 @@
 import { Exclude } from 'class-transformer'
 import { Entity, Column, Index } from 'typeorm'
 
-import { USER_ROLE, UserRole } from '@common/constants'
+import { USER_GENDER, USER_ROLE, UserGender, UserRole } from '@common/constants'
 
 import { BaseEntity } from './base.entity'
 
@@ -15,6 +15,12 @@ export class User extends BaseEntity {
 
   @Column({ type: 'varchar', unique: true, length: 15, nullable: true })
   phone: string | null
+
+  @Column({ type: 'enum', enum: USER_GENDER, nullable: true })
+  gender: UserGender | null
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  address: string | null
 
   @Exclude({ toPlainOnly: true })
   @Column({ type: 'varchar', select: false, length: 72, nullable: true })

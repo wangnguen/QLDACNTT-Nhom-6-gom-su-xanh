@@ -1,4 +1,4 @@
-import { UserRole } from '@common/constants'
+import { UserGender, UserRole } from '@common/constants'
 
 export type AuthTokens = {
   accessToken: string
@@ -10,6 +10,8 @@ export type AuthUser = {
   email: string
   fullName: string
   phone: string | null
+  gender: UserGender | null
+  address: string | null
   role: UserRole
   avatarUrl: string | null
   isEmailVerified: boolean
