@@ -1,0 +1,16 @@
+mixin button(text, href)
+  .button-container
+    a.button(href=href)= text
+
+mixin divider
+  hr.divider
+
+mixin codeBox(code, label = 'MÃ XÁC THỰC')
+  .code-box
+    p.code-label= label
+    p.code-value= code
+
+mixin warningBox
+  .warning-box
+    p.warning-text
+      block
