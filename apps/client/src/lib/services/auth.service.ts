@@ -1,0 +1,40 @@
+import { http } from '../axios'
+import type {
+  EmailRequest,
+  RefreshResponse,
+  RegisterRequest,
+  RegisterResponse,
+  VerifyEmailRequest
+} from '../types'
+
+// US-01: Đăng ký tài khoản
+export async function register(payload: RegisterRequest): Promise<RegisterResponse> {
+  const { data } = await http.post<RegisterResponse>('/auth/register', payload, { skipAuth: true })
+  return data
+}
+
+export async function verifyEmail(payload: VerifyEmailRequest): Promise<void> {
+  await http.post('/auth/verify-email', payload, { skipAuth: true })
+}
+
+export async function resendVerification(payload: EmailRequest): Promise<void> {
+  await http.post('/auth/resend-verification', payload, { skipAuth: true })
+}
+
+// Refresh token là httpOnly cookie — server tự đọc, không cần gửi body
+export async function refreshToken(): Promise<RefreshResponse> {
+  const { data } = await http.post<RefreshResponse>('/auth/refresh-token', undefined, { skipAuth: true })
+  return data
+}
+
+export async function logout(): Promise<void> {
+  await http.post('/auth/logout', undefined, { skipAuth: true })
+}
+
+export const authService = {
+  register,
+  verifyEmail,
+  resendVerification,
+  refreshToken,
+  logout
+}
