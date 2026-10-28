@@ -20,7 +20,8 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        // E2E test chạy API server riêng trên port khác
+        target: process.env.API_PROXY_TARGET ?? 'http://localhost:8080',
         changeOrigin: true
       }
     }
