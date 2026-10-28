@@ -97,10 +97,28 @@ The client and admin call the API through the Vite proxy (`/api` → `localhost:
 | `pnpm dev`                                                                            | Run all three apps                            |
 | `pnpm build`                                                                          | Build all three apps                          |
 | `pnpm type-check` / `pnpm lint` / `pnpm format`                                       | Type-check / lint / format                    |
+| `pnpm test`                                                                           | Run server unit tests (no DB or SMTP needed)  |
+| `pnpm test:e2e` / `pnpm test:e2e:ui`                                                  | Run E2E browser tests (see below)             |
 | `pnpm migration:run`                                                                  | Apply migrations to the database              |
 | `pnpm seed:admin`                                                                     | Create the admin account                      |
 | `pnpm --filter @gsx/server migration:generate src/databases/migrations/MigrationName` | Generate a migration after changing an entity |
 | `pnpm --filter @gsx/server migration:revert`                                          | Revert the latest migration                   |
+
+## E2E tests
+
+Playwright tests in [`e2e/`](e2e) drive the real client and admin in Chromium against the real API server. No Docker or local Postgres is needed:
+
+- **Postgres** runs from the `embedded-postgres` npm package, in `e2e/.tmp/`. Every run starts with an empty database, then migrations and the admin seed are applied.
+- **Email** goes to a fake SMTP server inside the test runner, not to Gmail. Tests read the OTP from the captured email.
+- Everything uses its own ports (API `8089`, client `3009`, admin `3010`) and its own env vars, so it never touches your `.env`, your Supabase database, or a dev server you already have running.
+
+```bash
+pnpm test:e2e:install   # once: download Chromium for Playwright
+pnpm test:e2e           # run all tests headless
+pnpm test:e2e:ui        # Playwright UI mode, to watch and debug tests
+```
+
+After a failure, open the HTML report (with traces and screenshots) with `pnpm --filter @gsx/e2e report`. The API server log is written to `e2e/.tmp/server.log`.
 
 ## API — E1
 
