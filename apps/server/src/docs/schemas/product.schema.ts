@@ -1,3 +1,5 @@
+import { z } from 'zod/v4'
+
 import { registry } from '@docs/registry'
 
 import { idParamSchema } from '@common/validators'
@@ -44,6 +46,28 @@ registry.registerPath({
       content: { 'application/json': { schema: paginatedWrapper(ProductSummarySchema, '/products') } }
     },
     422: validationErrorResponse()
+  }
+})
+
+// ─── US-09: Xem chi tiết sản phẩm ────────────────────────────────────────────
+
+registry.registerPath({
+  method: 'get',
+  path: '/products/{slug}',
+  tags: ['Sản phẩm - Chi tiết (US-09)'],
+  summary: 'Chi tiết sản phẩm',
+  description: `Không cần đăng nhập. Sản phẩm đang ẩn, thuộc danh mục đang ẩn hoặc đã xoá đều trả 404.
+
+Sản phẩm cùng danh mục: gọi \`GET /products?category=<slug danh mục>\`.`,
+  request: {
+    params: z.object({ slug: z.string().meta({ example: 'binh-hoa-men-lam-ve-sen' }) })
+  },
+  responses: {
+    200: {
+      description: 'Chi tiết sản phẩm',
+      content: { 'application/json': { schema: successWrapper(ProductDetailSchema, '/products/{slug}') } }
+    },
+    404: notFoundResponse('Không tìm thấy sản phẩm')
   }
 })
 

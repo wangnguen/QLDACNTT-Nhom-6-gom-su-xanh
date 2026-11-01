@@ -19,6 +19,13 @@ class ProductService {
     return { limit: query.limit, offset: query.offset, total_count: total, entries: products.map(toProductSummary) }
   }
 
+  // US-09: Chi tiết sản phẩm — sản phẩm đang ẩn trả 404 như không tồn tại
+  static async getBySlug(slug: string): Promise<ProductDetail> {
+    const product = await ProductRepository.findVisibleBySlug(slug)
+    if (!product) throw new NotFoundError(PRODUCT_NOT_FOUND_MESSAGE)
+    return toProductDetail(product)
+  }
+
   // US-07: Danh sách sản phẩm ở trang admin (gồm cả sản phẩm đang ẩn)
   static async listForAdmin({ status, ...query }: AdminProductQuery): Promise<Paginated<ProductSummary>> {
     const isActive = status === undefined ? undefined : status === PRODUCT_STATUS.ACTIVE

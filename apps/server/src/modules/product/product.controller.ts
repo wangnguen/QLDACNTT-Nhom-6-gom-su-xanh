@@ -11,6 +11,12 @@ class ProductController {
     return res.ok(products)
   }
 
+  // US-09: Xem chi tiết sản phẩm
+  static async getBySlug(req: Request<{ slug: string }>, res: Response) {
+    const product = await ProductService.getBySlug(req.params.slug)
+    return res.ok(product)
+  }
+
   // US-07: Quản lý sản phẩm (admin)
   static async listForAdmin(req: Request, res: Response) {
     const products = await ProductService.listForAdmin(AdminProductQuerySchema.parse(req.query))

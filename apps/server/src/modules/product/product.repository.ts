@@ -61,6 +61,16 @@ class ProductRepository {
     return this.productRepo.findOne({ where: { id }, relations: { category: true } })
   }
 
+  // Sản phẩm khách được xem: đang bán và thuộc danh mục đang hiện
+  static findVisibleBySlug(slug: string) {
+    return this.productRepo
+      .createQueryBuilder('product')
+      .innerJoinAndSelect('product.category', 'category')
+      .where('product.slug = :slug', { slug })
+      .andWhere('product.isActive = true AND category.isActive = true')
+      .getOne()
+  }
+
   // Các slug đang dùng có dạng `base` hoặc `base-<số>` (bỏ qua sản phẩm `excludeId` khi đang sửa chính nó)
   static async findSlugsWithBase(base: string, excludeId?: string): Promise<string[]> {
     const query = this.productRepo

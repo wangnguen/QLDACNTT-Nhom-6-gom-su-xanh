@@ -12,6 +12,7 @@ vi.mock('@modules/product/product.repository', () => ({
   default: {
     findMany: vi.fn(),
     findById: vi.fn(),
+    findVisibleBySlug: vi.fn(),
     findSlugsWithBase: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
@@ -56,6 +57,31 @@ describe('ProductService.list', () => {
     })
     expect(result).toMatchObject({ limit: 12, offset: 0, total_count: 1 })
     expect(result.entries[0]).not.toHaveProperty('description')
+  })
+})
+
+describe('ProductService.getBySlug', () => {
+  it('trả về đầy đủ thông tin chi tiết', async () => {
+    repo.findVisibleBySlug.mockResolvedValue(makeProduct())
+
+    const result = await ProductService.getBySlug('binh-hoa-men-lam')
+
+    expect(repo.findVisibleBySlug).toHaveBeenCalledWith('binh-hoa-men-lam')
+    expect(result).toMatchObject({
+      slug: 'binh-hoa-men-lam',
+      imageUrl: 'https://example.com/1.jpg',
+      imageUrls: ['https://example.com/1.jpg', 'https://example.com/2.jpg'],
+      description: 'Vẽ tay hoạ tiết hoa sen',
+      material: 'Gốm men lam',
+      dimensions: 'Cao 30cm',
+      category: { id: 'category-1', name: 'Bình hoa', slug: 'binh-hoa' }
+    })
+  })
+
+  it('báo lỗi 404 khi sản phẩm không tồn tại hoặc đang ẩn', async () => {
+    repo.findVisibleBySlug.mockResolvedValue(null)
+
+    await expect(ProductService.getBySlug('san-pham-an')).rejects.toThrow(NotFoundError)
   })
 })
 
