@@ -136,3 +136,22 @@ export interface ProductDetail extends ProductSummary {
   dimensions: string | null
   imageUrls: string[]
 }
+
+// ─── US-10: Giỏ hàng ─────────────────────────────────────────────────────────
+
+// null = mua được; còn lại: ngừng bán / hết hàng / số lượng trong giỏ vượt tồn kho
+export type CartItemIssue = 'unavailable' | 'out_of_stock' | 'not_enough_stock'
+
+export interface CartLine {
+  productId: string
+  quantity: number
+  product: ProductSummary
+  lineTotal: number
+  issue: CartItemIssue | null
+}
+
+export interface Cart {
+  items: CartLine[]
+  totalQuantity: number
+  subtotal: number
+}

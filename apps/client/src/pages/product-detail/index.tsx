@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ChevronRight, PackageCheck, PackageX, RotateCw, SearchX } from 'lucide-react'
 import { formatPrice } from '@lib/utils'
 import { ProductCard } from '@components/product'
+import { AddToCart } from './components/AddToCart'
 import { ProductGallery } from './components/ProductGallery'
 import { useProductDetailStore } from './store'
 
@@ -120,6 +121,10 @@ export default function ProductDetailPage() {
                   </>
                 )}
               </p>
+
+              <div className='mt-8'>
+                <AddToCart key={product.id} product={product} />
+              </div>
 
               {specs.length > 0 && (
                 <dl className='mt-8 divide-y divide-clay/50 rounded-[var(--radius-organic)] border border-clay/70 bg-cream px-5'>

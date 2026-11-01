@@ -21,10 +21,14 @@ export type {
   ProductSort,
   ProductSummary,
   ProductDetail,
-  ProductQuery
+  ProductQuery,
+  CartItemIssue,
+  CartLine,
+  Cart
 } from './types'
 
 export { authService } from './services/auth.service'
 export { usersService } from './services/users.service'
 export { productsService } from './services/products.service'
 export { categoriesService } from './services/categories.service'
+export { cartService } from './services/cart.service'
