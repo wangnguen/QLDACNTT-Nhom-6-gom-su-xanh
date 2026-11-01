@@ -4,6 +4,7 @@ import { registry } from './registry'
 import './extend-zod'
 
 import './schemas/auth.schema'
+import './schemas/cart.schema'
 import './schemas/category.schema'
 import './schemas/product.schema'
 import './schemas/user.schema'

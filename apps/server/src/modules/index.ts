@@ -4,6 +4,7 @@ import { USER_ROLE } from '@common/constants'
 import AuthenticateMiddleware from '@common/middlewares/auth.middleware'
 
 import AuthRoute from '@modules/auth/auth.route'
+import CartRoute from '@modules/cart/cart.route'
 import AdminCategoryRoute from '@modules/category/category.admin.route'
 import CategoryRoute from '@modules/category/category.route'
 import HealthRoute from '@modules/health/health.route'
@@ -20,6 +21,7 @@ router.use('/health', HealthRoute)
 router.use('/users', AuthenticateMiddleware.authenticate, UserRoute)
 router.use('/categories', CategoryRoute)
 router.use('/products', ProductRoute)
+router.use('/cart', AuthenticateMiddleware.authenticate, CartRoute)
 
 router.use('/admin/categories', ...adminOnly, AdminCategoryRoute)
 router.use('/admin/products', ...adminOnly, AdminProductRoute)

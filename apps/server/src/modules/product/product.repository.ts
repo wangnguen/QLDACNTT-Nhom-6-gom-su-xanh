@@ -3,6 +3,7 @@ import { Brackets, SelectQueryBuilder } from 'typeorm'
 import { PRODUCT_SORT, ProductSort } from '@common/constants'
 import { slugify } from '@common/utils/slug'
 
+import { CartItem } from '@entities/cart-item.entity'
 import { Product } from '@entities/product.entity'
 
 import AppDataSource from '@databases/data-source'
@@ -93,8 +94,12 @@ class ProductRepository {
     return this.findByIdOrFail(id)
   }
 
+  // Sản phẩm đã xoá không mua được nữa nên bỏ luôn khỏi mọi giỏ hàng
   static softDelete(id: string) {
-    return this.productRepo.softDelete(id)
+    return AppDataSource.getDataSource().transaction(async (manager) => {
+      await manager.getRepository(CartItem).delete({ productId: id })
+      await manager.getRepository(Product).softDelete(id)
+    })
   }
 
   private static findByIdOrFail(id: string) {
