@@ -87,6 +87,17 @@ export const conflictResponse = (description: string = 'Conflict') => errorRespo
 export const rateLimitResponse = () =>
   errorResponse(429, 'Gọi API quá nhiều lần (rate limit)', 'Bạn thao tác quá nhiều lần, vui lòng thử lại sau ít phút')
 
+export const paginatedWrapper = <T extends z.ZodTypeAny>(itemSchema: T, pathExample: string) =>
+  successWrapper(
+    z.object({
+      limit: z.number().int().meta({ example: 12 }),
+      offset: z.number().int().meta({ example: 0 }),
+      total_count: z.number().int().meta({ example: 1 }),
+      entries: z.array(itemSchema)
+    }),
+    pathExample
+  )
+
 export const nullSuccessResponse = (path: string, message: string) => ({
   description: message,
   content: {
@@ -123,5 +134,54 @@ export const AuthResponseSchema = registry.register(
   z.object({
     accessToken: z.string().meta({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' }),
     user: AuthUserSchema
+  })
+)
+
+export const CategoryRefSchema = registry.register(
+  'CategoryRef',
+  z.object({
+    id: z.string().uuid().meta({ example: 'c1d2e3f4-a5b6-4789-8abc-def012345678' }),
+    name: z.string().meta({ example: 'Bình hoa' }),
+    slug: z.string().meta({ example: 'binh-hoa' })
+  })
+)
+
+export const CategoryItemSchema = registry.register(
+  'CategoryItem',
+  CategoryRefSchema.extend({
+    description: z.string().nullable().meta({ example: 'Bình cắm hoa men lam, men rạn thủ công Bát Tràng' }),
+    imageUrl: z.string().url().nullable().meta({ example: 'https://example.com/images/binh-hoa.jpg' }),
+    isActive: z.boolean().meta({ example: true }),
+    productCount: z.number().int().meta({ example: 12 })
+  })
+)
+
+export const ProductSummarySchema = registry.register(
+  'ProductSummary',
+  z.object({
+    id: z.string().uuid().meta({ example: '9f1e2d3c-4b5a-4678-9abc-def012345678' }),
+    name: z.string().meta({ example: 'Bình hoa men lam vẽ sen' }),
+    slug: z.string().meta({ example: 'binh-hoa-men-lam-ve-sen' }),
+    price: z.number().int().meta({ example: 450000, description: 'Giá bán (VND)' }),
+    stock: z.number().int().meta({ example: 20, description: 'Số lượng tồn kho' }),
+    imageUrl: z
+      .string()
+      .url()
+      .nullable()
+      .meta({ example: 'https://example.com/images/binh-hoa-sen-1.jpg', description: 'Ảnh đại diện (ảnh đầu tiên)' }),
+    isActive: z.boolean().meta({ example: true }),
+    category: CategoryRefSchema
+  })
+)
+
+export const ProductDetailSchema = registry.register(
+  'ProductDetail',
+  ProductSummarySchema.extend({
+    description: z.string().nullable().meta({ example: 'Bình hoa men lam vẽ tay hoạ tiết hoa sen, nung ở 1.300°C.' }),
+    material: z.string().nullable().meta({ example: 'Gốm men lam' }),
+    dimensions: z.string().nullable().meta({ example: 'Cao 30cm, miệng 10cm' }),
+    imageUrls: z.array(z.string().url()).meta({
+      example: ['https://example.com/images/binh-hoa-sen-1.jpg', 'https://example.com/images/binh-hoa-sen-2.jpg']
+    })
   })
 )
