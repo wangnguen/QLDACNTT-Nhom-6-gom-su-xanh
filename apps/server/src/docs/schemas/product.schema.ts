@@ -2,7 +2,12 @@ import { registry } from '@docs/registry'
 
 import { idParamSchema } from '@common/validators'
 
-import { AdminProductQuerySchema, CreateProductBodySchema, UpdateProductBodySchema } from '@modules/product/dto'
+import {
+  AdminProductQuerySchema,
+  CreateProductBodySchema,
+  ProductQuerySchema,
+  UpdateProductBodySchema
+} from '@modules/product/dto'
 
 import {
   ProductDetailSchema,
@@ -17,6 +22,30 @@ import {
   unauthorizedResponse,
   validationErrorResponse
 } from './shared'
+
+// ─── US-08: Xem danh sách sản phẩm ───────────────────────────────────────────
+
+registry.registerPath({
+  method: 'get',
+  path: '/products',
+  tags: ['Sản phẩm - Danh sách (US-08)'],
+  summary: 'Danh sách sản phẩm',
+  description: `Không cần đăng nhập. Chỉ trả về sản phẩm đang bán thuộc danh mục đang hiện. Phân trang bằng \`limit\`/\`offset\`.
+
+- \`search\`: tìm theo tên, gõ có dấu hoặc không dấu đều được
+- \`category\`: slug danh mục (lấy từ \`GET /categories\`)
+- \`minPrice\`/\`maxPrice\`: khoảng giá (VND)
+- \`inStock=true\`: chỉ lấy sản phẩm còn hàng
+- \`sort\`: \`newest\` (mặc định), \`price_asc\`, \`price_desc\`, \`name_asc\``,
+  request: { query: ProductQuerySchema },
+  responses: {
+    200: {
+      description: 'Danh sách sản phẩm',
+      content: { 'application/json': { schema: paginatedWrapper(ProductSummarySchema, '/products') } }
+    },
+    422: validationErrorResponse()
+  }
+})
 
 // ─── US-07: Quản lý sản phẩm (admin) ─────────────────────────────────────────
 

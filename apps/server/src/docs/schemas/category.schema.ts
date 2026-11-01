@@ -106,3 +106,19 @@ registry.registerPath({
     422: validationErrorResponse('ID không hợp lệ')
   }
 })
+
+// ─── US-08: Xem danh sách sản phẩm ───────────────────────────────────────────
+
+registry.registerPath({
+  method: 'get',
+  path: '/categories',
+  tags: ['Sản phẩm - Danh sách (US-08)'],
+  summary: 'Danh mục đang hiện (cho bộ lọc)',
+  description: 'Không cần đăng nhập. Sắp xếp theo tên. `productCount` chỉ đếm sản phẩm đang bán.',
+  responses: {
+    200: {
+      description: 'Danh sách danh mục',
+      content: { 'application/json': { schema: successWrapper(z.array(CategoryItemSchema), '/categories') } }
+    }
+  }
+})

@@ -5,13 +5,20 @@ import { nextAvailableSlug, slugify } from '@common/utils/slug'
 
 import CategoryRepository from '@modules/category/category.repository'
 
-import { AdminProductQuery, CreateProductBody, UpdateProductBody } from './dto'
+import { AdminProductQuery, CreateProductBody, ProductQuery, UpdateProductBody } from './dto'
 import { toProductDetail, toProductSummary } from './product.mapper'
 import ProductRepository from './product.repository'
 
 export const PRODUCT_NOT_FOUND_MESSAGE = 'Không tìm thấy sản phẩm'
 
 class ProductService {
+  // US-08: Danh sách sản phẩm ở trang client — chỉ sản phẩm đang bán thuộc danh mục đang hiện
+  static async list({ category, ...query }: ProductQuery): Promise<Paginated<ProductSummary>> {
+    const [products, total] = await ProductRepository.findMany({ ...query, categorySlug: category, visibleOnly: true })
+
+    return { limit: query.limit, offset: query.offset, total_count: total, entries: products.map(toProductSummary) }
+  }
+
   // US-07: Danh sách sản phẩm ở trang admin (gồm cả sản phẩm đang ẩn)
   static async listForAdmin({ status, ...query }: AdminProductQuery): Promise<Paginated<ProductSummary>> {
     const isActive = status === undefined ? undefined : status === PRODUCT_STATUS.ACTIVE

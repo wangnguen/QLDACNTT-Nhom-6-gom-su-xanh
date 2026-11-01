@@ -4,6 +4,12 @@ import CategoryService from './category.service'
 import { CreateCategoryBody, UpdateCategoryBody } from './dto'
 
 class CategoryController {
+  // US-08: Danh mục cho bộ lọc ở trang danh sách sản phẩm
+  static async list(_req: Request, res: Response) {
+    const categories = await CategoryService.list()
+    return res.ok(categories)
+  }
+
   // US-07: Quản lý danh mục (admin)
   static async listForAdmin(_req: Request, res: Response) {
     const categories = await CategoryService.listForAdmin()

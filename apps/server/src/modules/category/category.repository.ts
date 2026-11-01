@@ -6,8 +6,8 @@ import AppDataSource from '@databases/data-source'
 type CategoryData = Partial<Pick<Category, 'name' | 'slug' | 'description' | 'imageUrl' | 'isActive'>>
 
 class CategoryRepository {
-  static findAll() {
-    return this.categoryRepo.find({ order: { name: 'ASC' } })
+  static findAll(activeOnly = false) {
+    return this.categoryRepo.find({ where: activeOnly ? { isActive: true } : {}, order: { name: 'ASC' } })
   }
 
   static findById(id: string) {
@@ -18,14 +18,16 @@ class CategoryRepository {
     return this.categoryRepo.findOne({ where: { slug } })
   }
 
-  // Số sản phẩm (chưa xoá) của từng danh mục
-  static async countProductsByCategory(): Promise<Map<string, number>> {
-    const rows = await this.productRepo
+  // Số sản phẩm (chưa xoá) của từng danh mục; `activeOnly` = chỉ đếm sản phẩm đang bán
+  static async countProductsByCategory(activeOnly = false): Promise<Map<string, number>> {
+    const query = this.productRepo
       .createQueryBuilder('product')
       .select('product.categoryId', 'categoryId')
       .addSelect('COUNT(*)::int', 'count')
       .groupBy('product.categoryId')
-      .getRawMany<{ categoryId: string; count: number }>()
+    if (activeOnly) query.where('product.isActive = true')
+
+    const rows = await query.getRawMany<{ categoryId: string; count: number }>()
 
     return new Map(rows.map((row) => [row.categoryId, row.count]))
   }

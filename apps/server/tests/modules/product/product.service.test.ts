@@ -41,6 +41,24 @@ beforeEach(() => {
   vi.resetAllMocks()
 })
 
+describe('ProductService.list', () => {
+  it('chỉ lấy sản phẩm khách được thấy, lọc danh mục theo slug', async () => {
+    repo.findMany.mockResolvedValue([[makeProduct()], 1])
+
+    const result = await ProductService.list({ limit: 12, offset: 0, sort: 'price_asc', category: 'binh-hoa' })
+
+    expect(repo.findMany).toHaveBeenCalledWith({
+      limit: 12,
+      offset: 0,
+      sort: 'price_asc',
+      categorySlug: 'binh-hoa',
+      visibleOnly: true
+    })
+    expect(result).toMatchObject({ limit: 12, offset: 0, total_count: 1 })
+    expect(result.entries[0]).not.toHaveProperty('description')
+  })
+})
+
 describe('ProductService.listForAdmin', () => {
   it('đổi status thành bộ lọc isActive và trả về dạng phân trang', async () => {
     repo.findMany.mockResolvedValue([[makeProduct()], 1])

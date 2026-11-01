@@ -10,7 +10,13 @@ import AppDataSource from '@databases/data-source'
 export type ProductFilter = {
   search?: string
   categoryId?: string
+  categorySlug?: string
   isActive?: boolean
+  // Chỉ lấy sản phẩm khách được thấy: sản phẩm đang bán và danh mục đang hiện
+  visibleOnly?: boolean
+  minPrice?: number
+  maxPrice?: number
+  inStock?: boolean
   sort: ProductSort
   limit: number
   offset: number
@@ -38,9 +44,14 @@ class ProductRepository {
   static findMany(filter: ProductFilter): Promise<[Product[], number]> {
     const query = this.productRepo.createQueryBuilder('product').innerJoinAndSelect('product.category', 'category')
 
+    if (filter.visibleOnly) query.andWhere('product.isActive = true AND category.isActive = true')
     if (filter.search) this.applySearch(query, filter.search)
     if (filter.categoryId) query.andWhere('product.categoryId = :categoryId', { categoryId: filter.categoryId })
+    if (filter.categorySlug) query.andWhere('category.slug = :categorySlug', { categorySlug: filter.categorySlug })
     if (filter.isActive !== undefined) query.andWhere('product.isActive = :isActive', { isActive: filter.isActive })
+    if (filter.minPrice !== undefined) query.andWhere('product.price >= :minPrice', { minPrice: filter.minPrice })
+    if (filter.maxPrice !== undefined) query.andWhere('product.price <= :maxPrice', { maxPrice: filter.maxPrice })
+    if (filter.inStock) query.andWhere('product.stock > 0')
 
     this.applySort(query, filter.sort)
     return query.skip(filter.offset).take(filter.limit).getManyAndCount()

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { AdminProductQuerySchema, CreateProductBodySchema, UpdateProductBodySchema } from '@modules/product/dto'
+import {
+  AdminProductQuerySchema,
+  CreateProductBodySchema,
+  ProductQuerySchema,
+  UpdateProductBodySchema
+} from '@modules/product/dto'
 
 const CATEGORY_ID = 'a1b2c3d4-e5f6-4890-abcd-ef1234567890'
 
@@ -71,6 +76,41 @@ describe('AdminProductQuerySchema', () => {
     'từ chối query không hợp lệ: %o',
     (query) => {
       expect(AdminProductQuerySchema.safeParse(query).success).toBe(false)
+    }
+  )
+})
+
+describe('ProductQuerySchema', () => {
+  it('ép kiểu bộ lọc từ query string', () => {
+    expect(
+      ProductQuerySchema.parse({ category: 'binh-hoa', minPrice: '100000', maxPrice: '500000', inStock: 'true' })
+    ).toEqual({
+      limit: 12,
+      offset: 0,
+      sort: 'newest',
+      category: 'binh-hoa',
+      minPrice: 100000,
+      maxPrice: 500000,
+      inStock: true
+    })
+  })
+
+  it('bỏ qua danh mục rỗng', () => {
+    expect(ProductQuerySchema.parse({ category: '' }).category).toBeUndefined()
+  })
+
+  it('báo lỗi khi giá tối thiểu lớn hơn giá tối đa', () => {
+    const result = ProductQuerySchema.safeParse({ minPrice: '500000', maxPrice: '100000' })
+    expect(result.error?.issues[0]).toMatchObject({
+      path: ['minPrice'],
+      message: 'Giá tối thiểu không được lớn hơn giá tối đa'
+    })
+  })
+
+  it.each([{ category: 'Bình hoa' }, { minPrice: '-1' }, { maxPrice: 'abc' }, { inStock: 'maybe' }])(
+    'từ chối query không hợp lệ: %o',
+    (query) => {
+      expect(ProductQuerySchema.safeParse(query).success).toBe(false)
     }
   )
 })

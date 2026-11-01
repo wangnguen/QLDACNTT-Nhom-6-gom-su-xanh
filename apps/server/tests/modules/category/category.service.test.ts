@@ -26,6 +26,29 @@ beforeEach(() => {
   vi.resetAllMocks()
 })
 
+describe('CategoryService.list', () => {
+  it('chỉ lấy danh mục đang hiện và chỉ đếm sản phẩm đang bán', async () => {
+    repo.findAll.mockResolvedValue([makeCategory()])
+    repo.countProductsByCategory.mockResolvedValue(new Map([['category-1', 2]]))
+
+    const result = await CategoryService.list()
+
+    expect(repo.findAll).toHaveBeenCalledWith(true)
+    expect(repo.countProductsByCategory).toHaveBeenCalledWith(true)
+    expect(result).toEqual([
+      {
+        id: 'category-1',
+        name: 'Bình hoa',
+        slug: 'binh-hoa',
+        description: null,
+        imageUrl: null,
+        isActive: true,
+        productCount: 2
+      }
+    ])
+  })
+})
+
 describe('CategoryService.listForAdmin', () => {
   it('ghép số sản phẩm vào từng danh mục, danh mục chưa có sản phẩm là 0', async () => {
     repo.findAll.mockResolvedValue([makeCategory(), makeCategory({ id: 'category-2', name: 'Ấm chén' })])
@@ -33,6 +56,7 @@ describe('CategoryService.listForAdmin', () => {
 
     const result = await CategoryService.listForAdmin()
 
+    expect(repo.findAll).toHaveBeenCalledWith()
     expect(result.map((c) => [c.id, c.productCount])).toEqual([
       ['category-1', 3],
       ['category-2', 0]

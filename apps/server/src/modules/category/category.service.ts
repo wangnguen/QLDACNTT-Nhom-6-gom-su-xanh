@@ -9,6 +9,15 @@ import { CreateCategoryBody, UpdateCategoryBody } from './dto'
 export const CATEGORY_NOT_FOUND_MESSAGE = 'Không tìm thấy danh mục'
 
 class CategoryService {
+  // US-08: Danh mục đang hiện ở trang client, kèm số sản phẩm đang bán (dùng cho bộ lọc)
+  static async list(): Promise<CategoryItem[]> {
+    const [categories, productCounts] = await Promise.all([
+      CategoryRepository.findAll(true),
+      CategoryRepository.countProductsByCategory(true)
+    ])
+    return categories.map((category) => toCategoryItem(category, productCounts.get(category.id) ?? 0))
+  }
+
   // US-07: Danh sách danh mục ở trang admin (gồm cả danh mục đang ẩn)
   static async listForAdmin(): Promise<CategoryItem[]> {
     const [categories, productCounts] = await Promise.all([
