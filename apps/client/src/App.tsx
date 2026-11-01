@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { useAuthStore } from './stores/authStore'
+import { useCartStore } from './stores/cartStore'
 
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { GuestRoute } from './components/GuestRoute'
@@ -19,6 +20,9 @@ import ChangeEmailPage from './pages/account/change-email'
 import ChangePasswordPage from './pages/account/change-password'
 
 import HomePage from './pages/home'
+import ProductsPage from './pages/products'
+import ProductDetailPage from './pages/product-detail'
+import CartPage from './pages/cart'
 import NotFoundPage from './pages/not-found'
 
 function App() {
@@ -31,6 +35,16 @@ function App() {
     initAuth()
   }, [initAuth])
 
+  // US-10: Đăng nhập thì tải giỏ hàng (để hiện số trên header), đăng xuất thì xoá khỏi bộ nhớ
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const fetchCart = useCartStore((s) => s.fetch)
+  const resetCart = useCartStore((s) => s.reset)
+
+  useEffect(() => {
+    if (isAuthenticated) fetchCart()
+    else resetCart()
+  }, [isAuthenticated, fetchCart, resetCart])
+
   return (
     <>
       <Toaster richColors position='top-right' />
@@ -41,6 +55,36 @@ function App() {
             <AppLayout>
               <HomePage />
             </AppLayout>
+          }
+        />
+
+        {/* US-08, US-09 — xem sản phẩm không cần đăng nhập */}
+        <Route
+          path='/products'
+          element={
+            <AppLayout>
+              <ProductsPage />
+            </AppLayout>
+          }
+        />
+        <Route
+          path='/products/:slug'
+          element={
+            <AppLayout>
+              <ProductDetailPage />
+            </AppLayout>
+          }
+        />
+
+        {/* US-10 — giỏ hàng cần đăng nhập */}
+        <Route
+          path='/cart'
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <CartPage />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
 
