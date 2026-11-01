@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Outlet, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { useAuthStore } from './stores/authStore'
 
@@ -9,6 +9,9 @@ import { AdminLayout } from './components/layout/AdminLayout'
 
 import LoginPage from './pages/auth/login'
 import DashboardPage from './pages/dashboard'
+import CategoriesPage from './pages/categories'
+import ProductsPage from './pages/products'
+import ProductFormPage from './pages/products/form'
 import NotFoundPage from './pages/not-found'
 
 function App() {
@@ -34,16 +37,24 @@ function App() {
           }
         />
 
+        {/* Các trang quản trị dùng chung khung AdminLayout, cần đăng nhập */}
         <Route
-          path='/'
           element={
             <ProtectedRoute>
               <AdminLayout>
-                <DashboardPage />
+                <Outlet />
               </AdminLayout>
             </ProtectedRoute>
           }
-        />
+        >
+          <Route path='/' element={<DashboardPage />} />
+
+          {/* US-07: Quản lý danh mục và sản phẩm */}
+          <Route path='/categories' element={<CategoriesPage />} />
+          <Route path='/products' element={<ProductsPage />} />
+          <Route path='/products/new' element={<ProductFormPage />} />
+          <Route path='/products/:id/edit' element={<ProductFormPage />} />
+        </Route>
 
         <Route path='*' element={<NotFoundPage />} />
       </Routes>

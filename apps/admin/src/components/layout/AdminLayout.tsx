@@ -1,16 +1,19 @@
 import type { ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { BookOpen, LayoutDashboard, LogOut, Package, ReceiptText, Users, CalendarDays } from 'lucide-react'
+import { BookOpen, CalendarDays, FolderTree, LayoutDashboard, LogOut, Package, ReceiptText, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@stores/authStore'
 import { cn } from '@lib/utils'
 import { Logo } from '../Logo'
 
-const NAV_ITEMS = [{ to: '/', label: 'Tổng quan', icon: LayoutDashboard }]
+const NAV_ITEMS = [
+  { to: '/', label: 'Tổng quan', icon: LayoutDashboard, end: true },
+  { to: '/products', label: 'Sản phẩm', icon: Package, end: false },
+  { to: '/categories', label: 'Danh mục', icon: FolderTree, end: false }
+]
 
 // Các module sẽ làm ở sprint sau — hiển thị trước để định hình bố cục
 const UPCOMING_ITEMS = [
-  { label: 'Sản phẩm', icon: Package },
   { label: 'Đơn hàng', icon: ReceiptText },
   { label: 'Workshop', icon: CalendarDays },
   { label: 'Bài viết', icon: BookOpen },
@@ -33,11 +36,11 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         <Logo inverted className='px-2' />
 
         <nav className='mt-10 flex-1 space-y-1'>
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
-              end
+              end={end}
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
@@ -80,6 +83,29 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             </button>
           </div>
         </header>
+
+        {/* Mobile: sidebar bị ẩn nên hiện menu dạng tab cuộn ngang */}
+        <nav
+          aria-label='Menu quản trị'
+          className='flex gap-1 overflow-x-auto border-b border-clay/60 bg-cream px-3 py-2 [scrollbar-width:none] md:hidden'
+        >
+          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                cn(
+                  'flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-sm font-semibold whitespace-nowrap transition-colors',
+                  isActive ? 'bg-moss text-cream' : 'text-moss hover:bg-moss/5'
+                )
+              }
+            >
+              <Icon size={16} />
+              {label}
+            </NavLink>
+          ))}
+        </nav>
 
         <main className='flex-1 px-4 py-8 sm:px-8'>{children}</main>
       </div>
