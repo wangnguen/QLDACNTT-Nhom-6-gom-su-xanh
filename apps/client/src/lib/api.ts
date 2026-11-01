@@ -14,8 +14,16 @@ export type {
   UpdateProfileRequest,
   ChangeEmailRequest,
   OtpRequest,
-  ChangePasswordRequest
+  ChangePasswordRequest,
+  Paginated,
+  CategoryRef,
+  CategoryItem,
+  ProductSort,
+  ProductSummary,
+  ProductQuery
 } from './types'
 
 export { authService } from './services/auth.service'
 export { usersService } from './services/users.service'
+export { productsService } from './services/products.service'
+export { categoriesService } from './services/categories.service'

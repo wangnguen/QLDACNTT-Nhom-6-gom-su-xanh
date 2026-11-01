@@ -83,3 +83,49 @@ export interface ChangePasswordRequest {
   newPassword: string
   confirmPassword: string
 }
+
+// ─── US-08, US-09: Sản phẩm ──────────────────────────────────────────────────
+
+export interface Paginated<T> {
+  limit: number
+  offset: number
+  total_count: number
+  entries: T[]
+}
+
+export interface CategoryRef {
+  id: string
+  name: string
+  slug: string
+}
+
+export interface CategoryItem extends CategoryRef {
+  description: string | null
+  imageUrl: string | null
+  isActive: boolean
+  productCount: number
+}
+
+export type ProductSort = 'newest' | 'price_asc' | 'price_desc' | 'name_asc'
+
+export interface ProductSummary {
+  id: string
+  name: string
+  slug: string
+  price: number
+  stock: number
+  imageUrl: string | null
+  isActive: boolean
+  category: CategoryRef
+}
+
+export interface ProductQuery {
+  limit?: number
+  offset?: number
+  search?: string
+  category?: string
+  minPrice?: number
+  maxPrice?: number
+  inStock?: boolean
+  sort?: ProductSort
+}

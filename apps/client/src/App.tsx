@@ -19,6 +19,7 @@ import ChangeEmailPage from './pages/account/change-email'
 import ChangePasswordPage from './pages/account/change-password'
 
 import HomePage from './pages/home'
+import ProductsPage from './pages/products'
 import NotFoundPage from './pages/not-found'
 
 function App() {
@@ -40,6 +41,16 @@ function App() {
           element={
             <AppLayout>
               <HomePage />
+            </AppLayout>
+          }
+        />
+
+        {/* US-08 — xem sản phẩm không cần đăng nhập */}
+        <Route
+          path='/products'
+          element={
+            <AppLayout>
+              <ProductsPage />
             </AppLayout>
           }
         />
