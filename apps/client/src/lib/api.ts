@@ -20,6 +20,7 @@ export type {
   CategoryItem,
   ProductSort,
   ProductSummary,
+  ProductDetail,
   ProductQuery
 } from './types'
 

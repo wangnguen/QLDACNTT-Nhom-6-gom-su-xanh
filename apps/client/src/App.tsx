@@ -20,6 +20,7 @@ import ChangePasswordPage from './pages/account/change-password'
 
 import HomePage from './pages/home'
 import ProductsPage from './pages/products'
+import ProductDetailPage from './pages/product-detail'
 import NotFoundPage from './pages/not-found'
 
 function App() {
@@ -45,12 +46,20 @@ function App() {
           }
         />
 
-        {/* US-08 — xem sản phẩm không cần đăng nhập */}
+        {/* US-08, US-09 — xem sản phẩm không cần đăng nhập */}
         <Route
           path='/products'
           element={
             <AppLayout>
               <ProductsPage />
+            </AppLayout>
+          }
+        />
+        <Route
+          path='/products/:slug'
+          element={
+            <AppLayout>
+              <ProductDetailPage />
             </AppLayout>
           }
         />

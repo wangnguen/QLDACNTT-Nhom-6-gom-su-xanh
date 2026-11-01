@@ -129,3 +129,10 @@ export interface ProductQuery {
   inStock?: boolean
   sort?: ProductSort
 }
+
+export interface ProductDetail extends ProductSummary {
+  description: string | null
+  material: string | null
+  dimensions: string | null
+  imageUrls: string[]
+}
