@@ -14,10 +14,19 @@ export type {
   ProductSummary,
   ProductDetail,
   AdminProductQuery,
-  ProductPayload
+  ProductPayload,
+  WorkshopSort,
+  WorkshopStatus,
+  WorkshopTime,
+  WorkshopAvailability,
+  WorkshopSummary,
+  WorkshopDetail,
+  AdminWorkshopQuery,
+  WorkshopPayload
 } from './types'
 
 export { authService } from './services/auth.service'
 export { usersService } from './services/users.service'
 export { categoriesService } from './services/categories.service'
 export { productsService } from './services/products.service'
+export { workshopsService } from './services/workshops.service'

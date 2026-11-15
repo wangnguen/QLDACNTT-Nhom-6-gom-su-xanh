@@ -100,3 +100,59 @@ export interface ProductPayload {
   imageUrls: string[]
   isActive: boolean
 }
+
+// ─── US-11: Lớp workshop ─────────────────────────────────────────────────────
+
+export type WorkshopSort = 'start_asc' | 'start_desc' | 'price_asc' | 'price_desc' | 'newest'
+export type WorkshopStatus = 'active' | 'hidden'
+export type WorkshopTime = 'upcoming' | 'past'
+// open = đang nhận đăng ký, full = hết chỗ, closed = đã qua hạn đăng ký
+export type WorkshopAvailability = 'open' | 'full' | 'closed'
+
+// Thời điểm là chuỗi ISO 8601 (UTC) do server trả về
+export interface WorkshopSummary {
+  id: string
+  name: string
+  slug: string
+  imageUrl: string | null
+  instructor: string | null
+  location: string
+  startsAt: string
+  endsAt: string
+  registrationClosesAt: string
+  price: number
+  capacity: number
+  bookedSeats: number
+  seatsLeft: number
+  availability: WorkshopAvailability
+  isActive: boolean
+}
+
+export interface WorkshopDetail extends WorkshopSummary {
+  description: string | null
+  registrationDeadline: string | null
+  imageUrls: string[]
+}
+
+export interface AdminWorkshopQuery {
+  limit?: number
+  offset?: number
+  search?: string
+  status?: WorkshopStatus
+  time?: WorkshopTime
+  sort?: WorkshopSort
+}
+
+export interface WorkshopPayload {
+  name: string
+  description: string | null
+  instructor: string | null
+  location: string
+  startsAt: string
+  endsAt: string
+  registrationDeadline: string | null
+  price: number
+  capacity: number
+  imageUrls: string[]
+  isActive: boolean
+}

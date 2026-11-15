@@ -1,4 +1,5 @@
 export { ConfirmDialog } from './ConfirmDialog'
+export { FilterSelect } from './FilterSelect'
 export { Modal } from './Modal'
 export { PageHeader } from './PageHeader'
 export { Pagination } from './Pagination'
