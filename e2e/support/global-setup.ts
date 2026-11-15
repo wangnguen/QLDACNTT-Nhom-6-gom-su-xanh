@@ -66,7 +66,8 @@ const recreateDatabase = async (pg: EmbeddedPostgres) => {
   await client.connect()
   try {
     await client.query(`DROP DATABASE IF EXISTS ${DB_NAME} WITH (FORCE)`)
-    await client.query(`CREATE DATABASE ${DB_NAME}`)
+    // Windows initdb may default to WIN1252, which cannot store Vietnamese test data.
+    await client.query(`CREATE DATABASE ${DB_NAME} WITH TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C'`)
   } finally {
     await client.end()
   }

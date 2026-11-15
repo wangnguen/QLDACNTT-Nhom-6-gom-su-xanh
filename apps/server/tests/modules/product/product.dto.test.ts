@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import { MAX_PRODUCT_PRICE, MAX_PRODUCT_STOCK } from '@common/constants'
+
 import {
   AdminProductQuerySchema,
   CreateProductBodySchema,
@@ -16,6 +18,15 @@ const validBody = {
 }
 
 describe('CreateProductBodySchema', () => {
+  it('chấp nhận biên giá/tồn kho và từ chối vượt biên trên khi tạo hoặc sửa', () => {
+    const boundary = { price: MAX_PRODUCT_PRICE, stock: MAX_PRODUCT_STOCK }
+    expect(CreateProductBodySchema.safeParse({ ...validBody, ...boundary }).success).toBe(true)
+    expect(UpdateProductBodySchema.safeParse(boundary).success).toBe(true)
+    for (const invalid of [{ price: MAX_PRODUCT_PRICE + 1 }, { stock: MAX_PRODUCT_STOCK + 1 }]) {
+      expect(CreateProductBodySchema.safeParse({ ...validBody, ...invalid }).success).toBe(false)
+      expect(UpdateProductBodySchema.safeParse(invalid).success).toBe(false)
+    }
+  })
   it('điền giá trị mặc định: tồn kho 0, không ảnh, đang bán', () => {
     expect(CreateProductBodySchema.parse(validBody)).toEqual({ ...validBody, stock: 0, imageUrls: [], isActive: true })
   })
