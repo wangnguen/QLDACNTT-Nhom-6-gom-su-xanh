@@ -5,12 +5,27 @@ import { slugify } from '@common/utils/slug'
 
 import { Category } from '@entities/category.entity'
 import { Product } from '@entities/product.entity'
+import { Workshop } from '@entities/workshop.entity'
 
 import AppDataSource from '@databases/data-source'
 
 type SampleProduct = Pick<Product, 'name' | 'price' | 'stock' | 'material' | 'dimensions' | 'description' | 'imageUrls'>
 
 type SampleCategory = Pick<Category, 'name' | 'description' | 'imageUrl'> & { products: SampleProduct[] }
+
+type SampleWorkshop = Pick<
+  Workshop,
+  | 'name'
+  | 'description'
+  | 'instructor'
+  | 'location'
+  | 'startsAt'
+  | 'endsAt'
+  | 'registrationDeadline'
+  | 'price'
+  | 'capacity'
+  | 'imageUrls'
+>
 
 // Ảnh lấy từ Wikimedia Commons (CC0 / CC BY / CC BY-SA) — chỉ dùng làm dữ liệu chạy thử, thay bằng ảnh thật khi lên production
 const wiki = (path: string) => `https://thumb.wikimedia.org/wikipedia/commons/thumb/${path}`
@@ -304,14 +319,109 @@ const SAMPLE_CATALOG: SampleCategory[] = [
   }
 ]
 
-// Thêm danh mục và sản phẩm mẫu. Chạy lại nhiều lần cũng được: mục nào đã có (theo slug) thì giữ nguyên,
+const HOUR_MS = 60 * 60 * 1000
+const STUDIO = 'Xưởng Gốm Sứ Xanh, 12 Bát Tràng, Gia Lâm, Hà Nội'
+
+// Giờ Việt Nam (UTC+7) của ngày cách hôm nay `days` ngày — lịch mẫu luôn nằm trong tương lai mỗi lần seed
+const vnTime = (days: number, hour: number, minute = 0) => {
+  const vnNow = new Date(Date.now() + 7 * HOUR_MS)
+  return new Date(Date.UTC(vnNow.getUTCFullYear(), vnNow.getUTCMonth(), vnNow.getUTCDate() + days, hour - 7, minute))
+}
+
+const SAMPLE_WORKSHOPS: SampleWorkshop[] = [
+  {
+    name: 'Lớp vuốt gốm trên bàn xoay cơ bản',
+    description:
+      'Làm quen với đất sét, học cách định tâm và vuốt một chiếc cốc hoặc bát nhỏ trên bàn xoay. Sản phẩm được tráng men, nung và gửi về sau 2 tuần.',
+    instructor: 'Nghệ nhân Lê Văn Thành',
+    location: STUDIO,
+    startsAt: vnTime(3, 9),
+    endsAt: vnTime(3, 11, 30),
+    registrationDeadline: vnTime(2, 20),
+    price: 350000,
+    capacity: 12,
+    imageUrls: [
+      wiki('3/3c/365-_pottery_class.jpg/960px-365-_pottery_class.jpg'),
+      wiki(
+        '9/9d/Pottery_at_the_Chokhi_Dhani_Resort_Panchkula_24.jpg/960px-Pottery_at_the_Chokhi_Dhani_Resort_Panchkula_24.jpg'
+      )
+    ]
+  },
+  {
+    name: 'Lớp nặn gốm bằng tay cho gia đình',
+    description: 'Bố mẹ và các bé cùng nặn đĩa, chén, con giống bằng tay — không cần bàn xoay. Phù hợp trẻ từ 5 tuổi.',
+    instructor: 'Nghệ nhân Nguyễn Thị Hoa',
+    location: STUDIO,
+    startsAt: vnTime(6, 14),
+    endsAt: vnTime(6, 16),
+    registrationDeadline: null,
+    price: 250000,
+    capacity: 16,
+    imageUrls: [
+      wiki('6/67/Potter_at_work%2C_Jaura%2C_India.jpg/960px-Potter_at_work%2C_Jaura%2C_India.jpg'),
+      wiki('2/26/Pottery_Class_%287441668838%29.jpg/960px-Pottery_Class_%287441668838%29.jpg')
+    ]
+  },
+  {
+    name: 'Lớp vẽ men lam trên gốm mộc',
+    description: 'Vẽ hoạ tiết hoa sen, dây lá bằng men lam lên bình và đĩa gốm mộc có sẵn, sau đó nung ở 1.300°C.',
+    instructor: 'Hoạ sĩ Trần Minh Đức',
+    location: STUDIO,
+    startsAt: vnTime(10, 9),
+    endsAt: vnTime(10, 11),
+    registrationDeadline: vnTime(8, 20),
+    price: 300000,
+    capacity: 10,
+    imageUrls: [
+      wiki(
+        'a/af/Vase%2C_Bat_Trang_ceramic_with_blue_glaze_-_Nguyen_dynasty%2C_19th_century_AD_-_Vietnam_National_Museum_of_Fine_Arts_-_Hanoi%2C_Vietnam_-_DSC05325.JPG/960px-Vase%2C_Bat_Trang_ceramic_with_blue_glaze_-_Nguyen_dynasty%2C_19th_century_AD_-_Vietnam_National_Museum_of_Fine_Arts_-_Hanoi%2C_Vietnam_-_DSC05325.JPG'
+      ),
+      wiki('1/10/Bat-Trang-Ceramic-Village8.jpg/960px-Bat-Trang-Ceramic-Village8.jpg')
+    ]
+  },
+  {
+    name: 'Lớp vuốt gốm nâng cao: bình cổ cao',
+    description: 'Dành cho người đã vuốt được cốc, bát. Học kéo thành cao, thắt cổ và tạo miệng bình.',
+    instructor: 'Nghệ nhân Lê Văn Thành',
+    location: STUDIO,
+    startsAt: vnTime(14, 13, 30),
+    endsAt: vnTime(14, 17, 30),
+    registrationDeadline: vnTime(12, 20),
+    price: 650000,
+    capacity: 6,
+    imageUrls: [
+      wiki(
+        '5/5b/Pottery_at_the_Chokhi_Dhani_Resort_Panchkula_31.jpg/960px-Pottery_at_the_Chokhi_Dhani_Resort_Panchkula_31.jpg'
+      )
+    ]
+  },
+  {
+    name: 'Trải nghiệm làng gốm Bát Tràng nửa ngày',
+    description: 'Dạo chợ gốm, thăm lò nung cổ và tự tay làm một sản phẩm nhỏ. Đã gồm nước uống và hướng dẫn viên.',
+    instructor: null,
+    location: 'Chợ gốm Bát Tràng, Gia Lâm, Hà Nội',
+    startsAt: vnTime(21, 8),
+    endsAt: vnTime(21, 12),
+    registrationDeadline: null,
+    price: 150000,
+    capacity: 30,
+    imageUrls: [
+      wiki('a/ac/Bat-Trang-Ceramic-Village1.jpg/960px-Bat-Trang-Ceramic-Village1.jpg'),
+      wiki('b/ba/Bat-Trang-Ceramic-Village3.jpg/960px-Bat-Trang-Ceramic-Village3.jpg'),
+      wiki('8/8b/Bat-Trang-Ceramic-Village7.jpg/960px-Bat-Trang-Ceramic-Village7.jpg')
+    ]
+  }
+]
+
+// Thêm danh mục, sản phẩm và lớp workshop mẫu. Chạy lại nhiều lần cũng được: mục nào đã có (theo slug) thì giữ nguyên,
 // chỉ điền ảnh mẫu khi mục đó chưa có ảnh (ảnh admin đã sửa không bị ghi đè)
 const seedSample = async () => {
   const dataSource = await AppDataSource.connect()
   const categoryRepo = dataSource.getRepository(Category)
   const productRepo = dataSource.getRepository(Product)
+  const workshopRepo = dataSource.getRepository(Workshop)
 
-  const stats = { categories: 0, products: 0, images: 0 }
+  const stats = { categories: 0, products: 0, workshops: 0, images: 0 }
 
   for (const { products, ...categoryData } of SAMPLE_CATALOG) {
     const categorySlug = slugify(categoryData.name)
@@ -337,8 +447,17 @@ const seedSample = async () => {
     }
   }
 
+  for (const workshopData of SAMPLE_WORKSHOPS) {
+    const slug = slugify(workshopData.name)
+    if (await workshopRepo.exists({ where: { slug } })) continue
+
+    await workshopRepo.save(workshopRepo.create({ ...workshopData, slug }))
+    stats.workshops++
+  }
+
   logger.info(
-    `Sample data: ${stats.categories} new categories, ${stats.products} new products, ${stats.images} items got images`
+    `Sample data: ${stats.categories} new categories, ${stats.products} new products, ` +
+      `${stats.workshops} new workshops, ${stats.images} items got images`
   )
   await dataSource.destroy()
 }

@@ -8,6 +8,7 @@ import './schemas/cart.schema'
 import './schemas/category.schema'
 import './schemas/product.schema'
 import './schemas/user.schema'
+import './schemas/workshop.schema'
 
 export function buildOpenAPIDocument() {
   const generator = new OpenApiGeneratorV3(registry.definitions)

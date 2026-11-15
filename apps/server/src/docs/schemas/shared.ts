@@ -185,3 +185,42 @@ export const ProductDetailSchema = registry.register(
     })
   })
 )
+
+export const WorkshopSummarySchema = registry.register(
+  'WorkshopSummary',
+  z.object({
+    id: z.string().uuid().meta({ example: '5b6c7d8e-9f01-4234-8567-89abcdef0123' }),
+    name: z.string().meta({ example: 'Lớp vuốt gốm trên bàn xoay cơ bản' }),
+    slug: z.string().meta({ example: 'lop-vuot-gom-tren-ban-xoay-co-ban' }),
+    imageUrl: z
+      .string()
+      .url()
+      .nullable()
+      .meta({ example: 'https://example.com/images/lop-vuot-gom-1.jpg', description: 'Ảnh đại diện (ảnh đầu tiên)' }),
+    instructor: z.string().nullable().meta({ example: 'Nghệ nhân Lê Văn Thành' }),
+    location: z.string().meta({ example: 'Xưởng Gốm Sứ Xanh, 12 Bát Tràng, Gia Lâm, Hà Nội' }),
+    startsAt: z.string().datetime().meta({ example: '2026-12-05T02:00:00.000Z' }),
+    endsAt: z.string().datetime().meta({ example: '2026-12-05T04:30:00.000Z' }),
+    registrationClosesAt: z.string().datetime().meta({
+      example: '2026-12-04T13:00:00.000Z',
+      description: 'Thời điểm đóng đăng ký: hạn đăng ký nếu có, không thì là giờ bắt đầu'
+    }),
+    price: z.number().int().meta({ example: 350000, description: 'Học phí mỗi chỗ (VND), 0 = miễn phí' }),
+    capacity: z.number().int().meta({ example: 12, description: 'Số chỗ tối đa' }),
+    isActive: z.boolean().meta({ example: true })
+  })
+)
+
+export const WorkshopDetailSchema = registry.register(
+  'WorkshopDetail',
+  WorkshopSummarySchema.extend({
+    description: z.string().nullable().meta({
+      example: 'Làm quen với đất sét, định tâm và vuốt một chiếc cốc hoặc bát nhỏ cùng nghệ nhân.'
+    }),
+    registrationDeadline: z.string().datetime().nullable().meta({
+      example: '2026-12-04T13:00:00.000Z',
+      description: 'Hạn đăng ký admin đặt; `null` = nhận đăng ký tới giờ bắt đầu'
+    }),
+    imageUrls: z.array(z.string().url()).meta({ example: ['https://example.com/images/lop-vuot-gom-1.jpg'] })
+  })
+)

@@ -6,6 +6,7 @@ import type { Category } from '@entities/category.entity'
 import type { Product } from '@entities/product.entity'
 import type { RefreshToken } from '@entities/refresh-token.entity'
 import type { User } from '@entities/user.entity'
+import type { Workshop } from '@entities/workshop.entity'
 
 // Mật khẩu giả lập: test mock hashPassword thành `hashed:<mật khẩu>` để khỏi chạy bcrypt
 export const fakeHash = (plain: string) => `hashed:${plain}`
@@ -93,3 +94,27 @@ export const makeProduct = (overrides: Partial<Product> = {}): Product =>
     deletedAt: null,
     ...overrides
   }) as Product
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+// Mặc định: lớp mở sau 7 ngày, học 2,5 tiếng, chưa đặt hạn đăng ký
+export const makeWorkshop = (overrides: Partial<Workshop> = {}): Workshop =>
+  ({
+    id: 'workshop-1',
+    name: 'Lớp vuốt gốm cơ bản',
+    slug: 'lop-vuot-gom-co-ban',
+    description: 'Vuốt một chiếc cốc trên bàn xoay',
+    instructor: 'Nghệ nhân Lê Văn Thành',
+    location: '12 Bát Tràng, Gia Lâm, Hà Nội',
+    startsAt: new Date(Date.now() + 7 * DAY_MS),
+    endsAt: new Date(Date.now() + 7 * DAY_MS + 2.5 * 60 * 60 * 1000),
+    registrationDeadline: null,
+    price: 350000,
+    capacity: 12,
+    imageUrls: ['https://example.com/ws-1.jpg'],
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+    ...overrides
+  }) as Workshop

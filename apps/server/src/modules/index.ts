@@ -11,6 +11,7 @@ import HealthRoute from '@modules/health/health.route'
 import AdminProductRoute from '@modules/product/product.admin.route'
 import ProductRoute from '@modules/product/product.route'
 import UserRoute from '@modules/user/user.route'
+import AdminWorkshopRoute from '@modules/workshop/workshop.admin.route'
 
 const router = Router()
 
@@ -25,5 +26,6 @@ router.use('/cart', AuthenticateMiddleware.authenticate, CartRoute)
 
 router.use('/admin/categories', ...adminOnly, AdminCategoryRoute)
 router.use('/admin/products', ...adminOnly, AdminProductRoute)
+router.use('/admin/workshops', ...adminOnly, AdminWorkshopRoute)
 
 export default router
