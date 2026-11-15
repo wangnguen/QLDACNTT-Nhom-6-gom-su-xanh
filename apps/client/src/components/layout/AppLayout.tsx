@@ -21,11 +21,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className='flex min-h-screen flex-col'>
       <header className='sticky top-0 z-20 border-b border-clay/60 bg-cream/90 backdrop-blur'>
-        <div className='mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6'>
+        <div className='mx-auto flex min-h-16 max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2 sm:px-6'>
           <Logo compact />
 
           {initialized && (
-            <nav className='flex items-center gap-1.5 sm:gap-3'>
+            <nav className='flex flex-wrap items-center gap-1.5 sm:gap-3'>
+              <Link to='/workshops' className='text-sm font-semibold' aria-label='Workshop'>
+                Workshop
+              </Link>
               {/* US-08: Xem danh sách sản phẩm — mobile chỉ hiện biểu tượng */}
               <NavLink
                 to='/products'

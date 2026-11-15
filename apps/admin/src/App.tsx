@@ -13,6 +13,7 @@ import CategoriesPage from './pages/categories'
 import ProductsPage from './pages/products'
 import ProductFormPage from './pages/products/form'
 import NotFoundPage from './pages/not-found'
+import WorkshopsPage from './pages/workshops'
 
 function App() {
   const initAuth = useAuthStore((s) => s.initAuth)
@@ -48,6 +49,7 @@ function App() {
           }
         >
           <Route path='/' element={<DashboardPage />} />
+          <Route path='/workshops' element={<WorkshopsPage />} />
 
           {/* US-07: Quản lý danh mục và sản phẩm */}
           <Route path='/categories' element={<CategoriesPage />} />

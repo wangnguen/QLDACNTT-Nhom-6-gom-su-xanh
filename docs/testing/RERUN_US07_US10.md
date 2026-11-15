@@ -1,3 +1,5 @@
+> Cập nhật lần tiếp tục 15/11/2026 từ base 8f5ec91: xem [báo cáo mới](TEST_REPORT_SCRUM24_30_CONTINUATION.md), [ma trận bổ sung](TEST_CASES_SCRUM24_30_CONTINUATION.md) và [comment Jira mới](JIRA_HANDOFF_SCRUM24_30_CONTINUATION.md). Phần dưới giữ nguyên kết quả lịch sử; 4 nhóm Not Run đã được bổ sung kiểm thử, FE-01 đã được sửa và có regression desktop/mobile. Quy tắc và hướng dẫn Workshop ở [WORKSHOP_IMPLEMENTATION.md](WORKSHOP_IMPLEMENTATION.md).
+
 # Chạy lại trên Windows PowerShell
 
 Từ thư mục repo, Node >=20 (lần kiểm thử dùng 24.16.0). Nếu máy chặn các file .ps1, dùng `npx.cmd` như bên dưới; không cần thay đổi ExecutionPolicy.

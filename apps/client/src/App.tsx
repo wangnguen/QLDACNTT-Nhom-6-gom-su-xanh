@@ -24,6 +24,7 @@ import ProductsPage from './pages/products'
 import ProductDetailPage from './pages/product-detail'
 import CartPage from './pages/cart'
 import NotFoundPage from './pages/not-found'
+import WorkshopsPage from './pages/workshops'
 
 function App() {
   const initAuth = useAuthStore((s) => s.initAuth)
@@ -49,6 +50,14 @@ function App() {
     <>
       <Toaster richColors position='top-right' />
       <Routes>
+        <Route
+          path='/workshops'
+          element={
+            <AppLayout>
+              <WorkshopsPage />
+            </AppLayout>
+          }
+        />
         <Route
           path='/'
           element={

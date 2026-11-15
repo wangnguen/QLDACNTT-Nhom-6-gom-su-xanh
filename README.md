@@ -1,5 +1,7 @@
 # 🏺 Gốm Sứ Xanh
 
+Workshop (SCRUM-28–30): admin và khách dùng `/workshops` trên app tương ứng. Mô hình, API, migration và cách chạy local/test: [WORKSHOP_IMPLEMENTATION.md](docs/testing/WORKSHOP_IMPLEMENTATION.md). Kết quả kiểm thử mới và giới hạn: [báo cáo SCRUM-24–30](docs/testing/TEST_REPORT_SCRUM24_30_CONTINUATION.md).
+
 An e-commerce platform for handmade ceramics and pottery workshop bookings. This monorepo contains three apps:
 
 | App           | Stack                                                                      | Dev URL                                    |

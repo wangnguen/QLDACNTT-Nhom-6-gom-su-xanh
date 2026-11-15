@@ -70,7 +70,7 @@ export default function ProductDetailPage() {
     : []
 
   return (
-    <div className='mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:py-12'>
+    <div className='mx-auto max-w-6xl px-4 py-10 [overflow-wrap:anywhere] sm:px-6 lg:py-12'>
       {loading || !product ? (
         <DetailSkeleton />
       ) : (
@@ -97,11 +97,11 @@ export default function ProductDetailPage() {
             <div className='min-w-0'>
               <Link
                 to={`/products?category=${product.category.slug}`}
-                className='text-sm font-bold tracking-[0.15em] text-leaf uppercase hover:text-teal'
+                className='text-sm font-bold tracking-[0.15em] text-leaf uppercase [overflow-wrap:anywhere] hover:text-teal'
               >
                 {product.category.name}
               </Link>
-              <h1 className='mt-2 font-display text-4xl leading-tight font-bold text-moss sm:text-5xl'>
+              <h1 className='mt-2 font-display text-4xl leading-tight font-bold text-moss [overflow-wrap:anywhere] sm:text-5xl'>
                 {product.name}
               </h1>
               <p className='mt-4 font-display text-4xl font-bold text-teal'>{formatPrice(product.price)}</p>

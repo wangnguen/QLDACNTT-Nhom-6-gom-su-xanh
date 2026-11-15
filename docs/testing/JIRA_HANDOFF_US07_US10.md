@@ -1,4 +1,6 @@
-# Comment bàn giao dự thảo — chưa đăng Jira
+> Cập nhật lần tiếp tục 15/11/2026 từ base 8f5ec91: xem [báo cáo mới](TEST_REPORT_SCRUM24_30_CONTINUATION.md), [ma trận bổ sung](TEST_CASES_SCRUM24_30_CONTINUATION.md) và [comment Jira mới](JIRA_HANDOFF_SCRUM24_30_CONTINUATION.md). Phần dưới giữ nguyên kết quả lịch sử; 4 nhóm Not Run đã được bổ sung kiểm thử, FE-01 đã được sửa và có regression desktop/mobile. Quy tắc và hướng dẫn Workshop ở [WORKSHOP_IMPLEMENTATION.md](WORKSHOP_IMPLEMENTATION.md).
+
+# Comment bàn giao lịch sử US07–US10 — chưa đăng Jira
 
 Hưng, 15/11/2026. Nền 884f933, nhánh test/sprint-2-us07-us10. Windows/Chromium, API thật và database E2E riêng. Toàn bộ regression: 27 E2E Pass, 237 unit Pass; type-check/lint/build thành công. Không xem đây là nghiệm thu toàn bộ AC.
 

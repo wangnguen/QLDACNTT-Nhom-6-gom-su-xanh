@@ -7,6 +7,7 @@ import { cn } from '@lib/utils'
 import { Logo } from '../Logo'
 
 const NAV_ITEMS = [
+  { to: '/workshops', label: 'Workshop', icon: CalendarDays, end: false },
   { to: '/', label: 'Tổng quan', icon: LayoutDashboard, end: true },
   { to: '/products', label: 'Sản phẩm', icon: Package, end: false },
   { to: '/categories', label: 'Danh mục', icon: FolderTree, end: false }
@@ -15,7 +16,6 @@ const NAV_ITEMS = [
 // Các module sẽ làm ở sprint sau — hiển thị trước để định hình bố cục
 const UPCOMING_ITEMS = [
   { label: 'Đơn hàng', icon: ReceiptText },
-  { label: 'Workshop', icon: CalendarDays },
   { label: 'Bài viết', icon: BookOpen },
   { label: 'Khách hàng', icon: Users }
 ]
