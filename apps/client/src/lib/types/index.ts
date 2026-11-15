@@ -225,6 +225,14 @@ export interface WorkshopRegistration {
   workshop: WorkshopRef
 }
 
+// US-13: Lịch workshop của tôi
+export interface MyRegistrationQuery {
+  limit?: number
+  offset?: number
+  status?: RegistrationStatus
+  workshopId?: string
+}
+
 export interface CreateRegistrationRequest {
   workshopId: string
   seats: number

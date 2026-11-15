@@ -156,3 +156,40 @@ export interface WorkshopPayload {
   imageUrls: string[]
   isActive: boolean
 }
+
+// ─── US-13: Đăng ký workshop ─────────────────────────────────────────────────
+
+export type RegistrationStatus = 'pending' | 'confirmed' | 'attended' | 'cancelled'
+// Trạng thái admin được chuyển sang
+export type RegistrationAction = 'confirmed' | 'attended' | 'cancelled'
+
+export type WorkshopRef = Pick<
+  WorkshopSummary,
+  'id' | 'name' | 'slug' | 'imageUrl' | 'location' | 'startsAt' | 'endsAt'
+>
+
+export interface WorkshopRegistration {
+  id: string
+  code: string
+  seats: number
+  unitPrice: number
+  totalPrice: number
+  contactName: string
+  contactPhone: string
+  contactEmail: string
+  note: string | null
+  status: RegistrationStatus
+  cancelReason: string | null
+  cancelledBy: 'user' | 'admin' | null
+  cancelledAt: string | null
+  registeredAt: string
+  workshop: WorkshopRef
+}
+
+export interface AdminRegistrationQuery {
+  limit?: number
+  offset?: number
+  search?: string
+  workshopId?: string
+  status?: RegistrationStatus
+}

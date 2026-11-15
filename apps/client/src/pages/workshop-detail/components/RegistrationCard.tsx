@@ -2,11 +2,12 @@ import type { ReactNode } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useLocation } from 'react-router-dom'
-import { CircleCheckBig, LogIn } from 'lucide-react'
+import { CalendarDays, CircleCheckBig, LogIn } from 'lucide-react'
 import type { WorkshopDetail } from '@lib/api'
 import { MAX_SEATS_PER_REGISTRATION, registrationSchema, type RegistrationInput } from '@lib/schemas/workshop'
-import { formatDateTime, formatPrice } from '@lib/utils'
+import { cn, formatDateTime, formatPrice } from '@lib/utils'
 import { QuantityStepper } from '@components/product'
+import { REGISTRATION_STATUS_LABEL } from '@components/workshop'
 import { ErrorBanner, FieldInput, SubmitButton } from '@pages/auth/components'
 import { useAuthStore } from '@stores/authStore'
 import { useWorkshopDetailStore } from '../store'
@@ -39,7 +40,7 @@ function PriceHeader({ workshop }: { workshop: WorkshopDetail }) {
 // US-12: Đăng ký lớp — khách chưa đăng nhập được chuyển sang trang đăng nhập rồi quay lại
 export function RegistrationCard({ workshop }: { workshop: WorkshopDetail }) {
   const { user, isAuthenticated } = useAuthStore()
-  const { submitting, submitError, registration, register } = useWorkshopDetailStore()
+  const { submitting, submitError, registration, myRegistration, register } = useWorkshopDetailStore()
   const location = useLocation()
 
   const maxSeats = Math.max(1, Math.min(MAX_SEATS_PER_REGISTRATION, workshop.seatsLeft))
@@ -55,39 +56,48 @@ export function RegistrationCard({ workshop }: { workshop: WorkshopDetail }) {
   })
   const seats = useWatch({ control, name: 'seats' })
 
-  if (registration) {
+  // Vừa đăng ký xong, hoặc đã đăng ký lớp này từ trước (US-13)
+  const booked = registration ?? myRegistration
+  if (booked) {
+    const status = REGISTRATION_STATUS_LABEL[booked.status]
     return (
       <Shell>
         <div className='flex flex-col items-center text-center'>
           <span className='flex h-14 w-14 items-center justify-center rounded-full bg-teal/10 text-teal'>
             <CircleCheckBig size={30} aria-hidden />
           </span>
-          <h2 className='mt-3 font-display text-2xl font-bold text-moss'>Đăng ký thành công!</h2>
-          <p className='mt-1 text-sm text-ink'>Cửa hàng sẽ gọi điện xác nhận trong thời gian sớm nhất.</p>
+          <h2 className='mt-3 font-display text-2xl font-bold text-moss'>
+            {registration ? 'Đăng ký thành công!' : 'Bạn đã đăng ký lớp này'}
+          </h2>
+          {booked.status === 'pending' && (
+            <p className='mt-1 text-sm text-ink'>Cửa hàng sẽ gọi điện xác nhận trong thời gian sớm nhất.</p>
+          )}
         </div>
         <dl className='mt-5 space-y-2.5 rounded-xl bg-sand/60 p-4 text-sm'>
           <div className='flex justify-between gap-3'>
             <dt className='text-muted'>Mã đăng ký</dt>
-            <dd className='font-mono text-base font-bold tracking-wider text-forest'>{registration.code}</dd>
+            <dd className='font-mono text-base font-bold tracking-wider text-forest'>{booked.code}</dd>
           </div>
           <div className='flex justify-between gap-3'>
             <dt className='text-muted'>Số chỗ</dt>
-            <dd className='font-semibold'>{registration.seats}</dd>
+            <dd className='font-semibold'>{booked.seats}</dd>
           </div>
           <div className='flex justify-between gap-3'>
             <dt className='text-muted'>Tổng tiền</dt>
-            <dd className='font-semibold'>
-              {registration.totalPrice > 0 ? formatPrice(registration.totalPrice) : 'Miễn phí'}
-            </dd>
+            <dd className='font-semibold'>{booked.totalPrice > 0 ? formatPrice(booked.totalPrice) : 'Miễn phí'}</dd>
           </div>
-          <div className='flex justify-between gap-3'>
+          <div className='flex items-center justify-between gap-3'>
             <dt className='text-muted'>Trạng thái</dt>
-            <dd className='font-semibold text-warning'>Chờ xác nhận</dd>
+            <dd className={cn('rounded-full px-2.5 py-0.5 text-xs font-bold', status.className)}>{status.text}</dd>
           </div>
         </dl>
         <p className='mt-4 text-xs text-muted'>
           Đọc mã đăng ký cho nhân viên khi tới lớp. Thanh toán học phí tại xưởng.
         </p>
+        <Link to='/account/workshops' className='btn-outline mt-4 w-full'>
+          <CalendarDays size={16} />
+          Xem lịch workshop của tôi
+        </Link>
       </Shell>
     )
   }

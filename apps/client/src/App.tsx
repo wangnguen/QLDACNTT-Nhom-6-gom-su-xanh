@@ -18,6 +18,7 @@ import { AccountLayout } from './pages/account/components'
 import ProfilePage from './pages/account/profile'
 import ChangeEmailPage from './pages/account/change-email'
 import ChangePasswordPage from './pages/account/change-password'
+import MyWorkshopsPage from './pages/account/workshops'
 
 import HomePage from './pages/home'
 import ProductsPage from './pages/products'
@@ -157,6 +158,8 @@ function App() {
           <Route index element={<ProfilePage />} />
           <Route path='email' element={<ChangeEmailPage />} />
           <Route path='password' element={<ChangePasswordPage />} />
+          {/* US-13 — lịch workshop của tôi */}
+          <Route path='workshops' element={<MyWorkshopsPage />} />
         </Route>
 
         <Route path='*' element={<NotFoundPage />} />

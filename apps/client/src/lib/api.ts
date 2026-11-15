@@ -33,7 +33,8 @@ export type {
   RegistrationStatus,
   WorkshopRef,
   WorkshopRegistration,
-  CreateRegistrationRequest
+  CreateRegistrationRequest,
+  MyRegistrationQuery
 } from './types'
 
 export { authService } from './services/auth.service'

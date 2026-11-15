@@ -20,8 +20,11 @@ interface WorkshopDetailState {
   submitError: string
   // Đăng ký vừa tạo thành công trên trang này
   registration: WorkshopRegistration | null
+  // US-13: Đăng ký chưa huỷ của tài khoản đang đăng nhập cho lớp này (đã đăng ký từ trước)
+  myRegistration: WorkshopRegistration | null
 
   load: (slug: string) => Promise<void>
+  loadMine: (workshopId: string) => Promise<void>
   register: (payload: CreateRegistrationRequest) => Promise<boolean>
   reset: () => void
 }
@@ -33,7 +36,8 @@ const initialState = {
   error: '',
   submitting: false,
   submitError: '',
-  registration: null
+  registration: null,
+  myRegistration: null
 }
 
 // US-12: Xem chi tiết và đăng ký lớp workshop
@@ -50,6 +54,16 @@ export const useWorkshopDetailStore = create<WorkshopDetailState>((set, get) => 
       if (currentSlug !== slug) return
       if (err instanceof ApiError && err.status === 404) set({ notFound: true, loading: false })
       else set({ error: err instanceof ApiError ? err.message : 'Không tải được thông tin lớp', loading: false })
+    }
+  },
+
+  loadMine: async (workshopId) => {
+    const slug = currentSlug
+    try {
+      const { entries } = await registrationsService.listMine({ workshopId, limit: 10 })
+      if (currentSlug === slug) set({ myRegistration: entries.find((r) => r.status !== 'cancelled') ?? null })
+    } catch {
+      // Không kiểm tra được thì vẫn hiện form; đăng ký trùng sẽ được server báo lỗi
     }
   },
 

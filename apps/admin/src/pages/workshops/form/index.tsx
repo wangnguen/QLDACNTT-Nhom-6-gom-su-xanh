@@ -220,7 +220,14 @@ export default function WorkshopFormPage() {
                 )}
               />
             </div>
-            {workshop && <SeatsCell workshop={workshop} />}
+            {workshop && (
+              <div className='space-y-2'>
+                <SeatsCell workshop={workshop} />
+                <Link to={`/workshop-registrations?workshopId=${workshop.id}`} className='link text-sm'>
+                  Xem danh sách đăng ký
+                </Link>
+              </div>
+            )}
           </Card>
 
           <Card title='Học phí và số chỗ'>

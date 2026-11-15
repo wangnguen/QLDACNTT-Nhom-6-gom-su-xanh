@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
-import { CalendarX2, Pencil, Plus, RotateCw, Search, Trash2, X } from 'lucide-react'
+import { CalendarX2, ClipboardList, Pencil, Plus, RotateCw, Search, Trash2, X } from 'lucide-react'
 import type { AdminWorkshopQuery, WorkshopSort, WorkshopStatus, WorkshopSummary, WorkshopTime } from '@lib/api'
 import { cn, formatDate, formatPrice, formatTimeRange } from '@lib/utils'
 import { useDebouncedValue } from '@hooks/useDebouncedValue'
@@ -245,6 +245,14 @@ export default function WorkshopsPage() {
                     </td>
                     <td className='px-5 py-3'>
                       <div className='flex justify-end gap-1'>
+                        <Link
+                          to={`/workshop-registrations?workshopId=${workshop.id}`}
+                          className='inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-moss/5 hover:text-moss'
+                          aria-label={`Xem đăng ký lớp ${workshop.name}`}
+                          title='Xem đăng ký'
+                        >
+                          <ClipboardList size={17} />
+                        </Link>
                         <Link
                           to={`/workshops/${workshop.id}/edit`}
                           state={{ from: location.search }}

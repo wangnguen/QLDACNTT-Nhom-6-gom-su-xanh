@@ -23,7 +23,7 @@ function DetailSkeleton() {
 // US-12: Xem chi tiết và đăng ký lớp workshop
 export default function WorkshopDetailPage() {
   const { slug = '' } = useParams<{ slug: string }>()
-  const { workshop, loading, notFound, error, load, reset } = useWorkshopDetailStore()
+  const { workshop, loading, notFound, error, load, loadMine, reset } = useWorkshopDetailStore()
   // Đăng nhập xong form mới điền sẵn được tên, số điện thoại
   const userId = useAuthStore((s) => s.user?.id)
 
@@ -33,6 +33,12 @@ export default function WorkshopDetailPage() {
   }, [slug, load])
 
   useEffect(() => reset, [reset])
+
+  // US-13: Đã đăng nhập thì kiểm tra mình đã đăng ký lớp này chưa
+  const workshopId = workshop?.id
+  useEffect(() => {
+    if (workshopId && userId) loadMine(workshopId)
+  }, [workshopId, userId, loadMine])
 
   if (notFound) {
     return (
