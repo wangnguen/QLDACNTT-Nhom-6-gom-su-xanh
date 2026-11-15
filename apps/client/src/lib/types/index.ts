@@ -155,3 +155,80 @@ export interface Cart {
   totalQuantity: number
   subtotal: number
 }
+
+// ─── US-12: Workshop ─────────────────────────────────────────────────────────
+
+export type WorkshopSort = 'start_asc' | 'start_desc' | 'price_asc' | 'price_desc' | 'newest'
+// open = đang nhận đăng ký, full = hết chỗ, closed = đã qua hạn đăng ký
+export type WorkshopAvailability = 'open' | 'full' | 'closed'
+
+// Thời điểm là chuỗi ISO 8601 (UTC) do server trả về
+export interface WorkshopSummary {
+  id: string
+  name: string
+  slug: string
+  imageUrl: string | null
+  instructor: string | null
+  location: string
+  startsAt: string
+  endsAt: string
+  registrationClosesAt: string
+  price: number
+  capacity: number
+  bookedSeats: number
+  seatsLeft: number
+  availability: WorkshopAvailability
+  isActive: boolean
+}
+
+export interface WorkshopDetail extends WorkshopSummary {
+  description: string | null
+  registrationDeadline: string | null
+  imageUrls: string[]
+}
+
+export interface WorkshopQuery {
+  limit?: number
+  offset?: number
+  search?: string
+  // YYYY-MM-DD, giờ Việt Nam
+  from?: string
+  to?: string
+  availableOnly?: boolean
+  sort?: WorkshopSort
+}
+
+export type RegistrationStatus = 'pending' | 'confirmed' | 'attended' | 'cancelled'
+
+export type WorkshopRef = Pick<
+  WorkshopSummary,
+  'id' | 'name' | 'slug' | 'imageUrl' | 'location' | 'startsAt' | 'endsAt'
+>
+
+export interface WorkshopRegistration {
+  id: string
+  code: string
+  seats: number
+  unitPrice: number
+  totalPrice: number
+  contactName: string
+  contactPhone: string
+  contactEmail: string
+  note: string | null
+  status: RegistrationStatus
+  cancelReason: string | null
+  cancelledBy: 'user' | 'admin' | null
+  cancelledAt: string | null
+  registeredAt: string
+  cancellableUntil: string
+  canCancel: boolean
+  workshop: WorkshopRef
+}
+
+export interface CreateRegistrationRequest {
+  workshopId: string
+  seats: number
+  contactName: string
+  contactPhone: string
+  note: string | null
+}

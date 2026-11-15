@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { LogOut, ShoppingBag, Store, UserRound } from 'lucide-react'
+import { CalendarDays, LogOut, ShoppingBag, Store, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@stores/authStore'
 import { useCartStore } from '@stores/cartStore'
@@ -39,6 +39,21 @@ export function AppLayout({ children }: { children: ReactNode }) {
               >
                 <Store size={18} />
                 <span className='hidden sm:inline'>Sản phẩm</span>
+              </NavLink>
+
+              {/* US-12: Lịch workshop — mobile chỉ hiện biểu tượng */}
+              <NavLink
+                to='/workshops'
+                aria-label='Workshop'
+                className={({ isActive }) =>
+                  cn(
+                    'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-colors',
+                    isActive ? 'bg-moss/10 text-moss' : 'text-moss hover:bg-moss/5'
+                  )
+                }
+              >
+                <CalendarDays size={18} />
+                <span className='hidden sm:inline'>Workshop</span>
               </NavLink>
 
               {/* US-10: Giỏ hàng — khách chưa đăng nhập bấm vào sẽ được chuyển sang trang đăng nhập */}

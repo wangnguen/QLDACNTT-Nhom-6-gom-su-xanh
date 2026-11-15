@@ -2,9 +2,8 @@ import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ChevronRight, PackageCheck, PackageX, RotateCw, SearchX } from 'lucide-react'
 import { formatPrice } from '@lib/utils'
-import { ProductCard } from '@components/product'
+import { ProductCard, ProductGallery } from '@components/product'
 import { AddToCart } from './components/AddToCart'
-import { ProductGallery } from './components/ProductGallery'
 import { useProductDetailStore } from './store'
 
 // Còn ít hàng thì nhắc khách (giống thẻ sản phẩm)

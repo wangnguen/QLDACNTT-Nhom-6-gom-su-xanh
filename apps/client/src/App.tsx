@@ -23,6 +23,8 @@ import HomePage from './pages/home'
 import ProductsPage from './pages/products'
 import ProductDetailPage from './pages/product-detail'
 import CartPage from './pages/cart'
+import WorkshopsPage from './pages/workshops'
+import WorkshopDetailPage from './pages/workshop-detail'
 import NotFoundPage from './pages/not-found'
 
 function App() {
@@ -72,6 +74,24 @@ function App() {
           element={
             <AppLayout>
               <ProductDetailPage />
+            </AppLayout>
+          }
+        />
+
+        {/* US-12 — xem lịch workshop không cần đăng nhập, đăng ký thì cần */}
+        <Route
+          path='/workshops'
+          element={
+            <AppLayout>
+              <WorkshopsPage />
+            </AppLayout>
+          }
+        />
+        <Route
+          path='/workshops/:slug'
+          element={
+            <AppLayout>
+              <WorkshopDetailPage />
             </AppLayout>
           }
         />
