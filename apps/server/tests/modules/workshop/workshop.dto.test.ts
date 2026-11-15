@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { AdminWorkshopQuerySchema, CreateWorkshopBodySchema, UpdateWorkshopBodySchema } from '@modules/workshop/dto'
+import {
+  AdminWorkshopQuerySchema,
+  CreateWorkshopBodySchema,
+  UpdateWorkshopBodySchema,
+  WorkshopQuerySchema
+} from '@modules/workshop/dto'
 
 const validBody = {
   name: 'Lớp vuốt gốm cơ bản',
@@ -65,5 +70,24 @@ describe('AdminWorkshopQuerySchema', () => {
   it('từ chối bộ lọc không hợp lệ', () => {
     expect(AdminWorkshopQuerySchema.safeParse({ time: 'tomorrow' }).success).toBe(false)
     expect(AdminWorkshopQuerySchema.safeParse({ status: 'deleted' }).success).toBe(false)
+  })
+})
+
+describe('WorkshopQuerySchema', () => {
+  it('đổi availableOnly thành boolean, giữ ngày dạng chuỗi', () => {
+    expect(WorkshopQuerySchema.parse({ availableOnly: 'true', from: '2026-12-01', to: '2026-12-01' })).toMatchObject({
+      availableOnly: true,
+      from: '2026-12-01',
+      to: '2026-12-01'
+    })
+  })
+
+  it.each([
+    ['ngày sai định dạng', { from: '01/12/2026' }],
+    ['ngày không tồn tại', { to: '2026-02-30' }],
+    ['từ ngày sau đến ngày', { from: '2026-12-10', to: '2026-12-01' }],
+    ['availableOnly không phải boolean', { availableOnly: 'maybe' }]
+  ])('từ chối khi %s', (_case, query) => {
+    expect(WorkshopQuerySchema.safeParse(query).success).toBe(false)
   })
 })

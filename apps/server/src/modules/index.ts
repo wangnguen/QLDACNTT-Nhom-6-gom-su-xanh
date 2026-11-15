@@ -12,6 +12,8 @@ import AdminProductRoute from '@modules/product/product.admin.route'
 import ProductRoute from '@modules/product/product.route'
 import UserRoute from '@modules/user/user.route'
 import AdminWorkshopRoute from '@modules/workshop/workshop.admin.route'
+import WorkshopRoute from '@modules/workshop/workshop.route'
+import WorkshopRegistrationRoute from '@modules/workshop-registration/workshop-registration.route'
 
 const router = Router()
 
@@ -23,6 +25,8 @@ router.use('/users', AuthenticateMiddleware.authenticate, UserRoute)
 router.use('/categories', CategoryRoute)
 router.use('/products', ProductRoute)
 router.use('/cart', AuthenticateMiddleware.authenticate, CartRoute)
+router.use('/workshops', WorkshopRoute)
+router.use('/workshop-registrations', AuthenticateMiddleware.authenticate, WorkshopRegistrationRoute)
 
 router.use('/admin/categories', ...adminOnly, AdminCategoryRoute)
 router.use('/admin/products', ...adminOnly, AdminProductRoute)

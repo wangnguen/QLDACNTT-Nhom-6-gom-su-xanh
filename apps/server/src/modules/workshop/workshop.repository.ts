@@ -1,6 +1,6 @@
 import { Brackets, SelectQueryBuilder } from 'typeorm'
 
-import { WORKSHOP_SORT, WORKSHOP_TIME, WorkshopSort, WorkshopTime } from '@common/constants'
+import { REGISTRATION_STATUS, WORKSHOP_SORT, WORKSHOP_TIME, WorkshopSort, WorkshopTime } from '@common/constants'
 import { slugify } from '@common/utils/slug'
 
 import { Workshop } from '@entities/workshop.entity'
@@ -11,6 +11,13 @@ export type WorkshopFilter = {
   search?: string
   isActive?: boolean
   time?: WorkshopTime
+  // Trang client: chỉ lớp đang mở và chưa bắt đầu
+  visibleOnly?: boolean
+  // Giờ bắt đầu trong khoảng [startsFrom, startsBefore)
+  startsFrom?: Date
+  startsBefore?: Date
+  // Chỉ lớp còn nhận đăng ký: chưa qua hạn và còn chỗ
+  availableOnly?: boolean
   sort: WorkshopSort
   limit: number
   offset: number
@@ -47,6 +54,19 @@ class WorkshopRepository {
     if (filter.isActive !== undefined) query.andWhere('workshop.isActive = :isActive', { isActive: filter.isActive })
     if (filter.time === WORKSHOP_TIME.UPCOMING) query.andWhere('workshop.endsAt > NOW()')
     if (filter.time === WORKSHOP_TIME.PAST) query.andWhere('workshop.endsAt <= NOW()')
+    if (filter.visibleOnly) query.andWhere('workshop.isActive = true AND workshop.startsAt > NOW()')
+    if (filter.startsFrom) query.andWhere('workshop.startsAt >= :startsFrom', { startsFrom: filter.startsFrom })
+    if (filter.startsBefore) query.andWhere('workshop.startsAt < :startsBefore', { startsBefore: filter.startsBefore })
+    if (filter.availableOnly) {
+      query.andWhere('COALESCE(workshop.registrationDeadline, workshop.startsAt) > NOW()').andWhere(
+        `workshop.capacity > COALESCE((
+            SELECT SUM(registration.seats) FROM workshop_registrations registration
+            WHERE registration.workshop_id = workshop.id
+              AND registration.status <> :cancelled AND registration.deleted_at IS NULL
+          ), 0)`,
+        { cancelled: REGISTRATION_STATUS.CANCELLED }
+      )
+    }
 
     this.applySort(query, filter.sort)
     return query.skip(filter.offset).take(filter.limit).getManyAndCount()
@@ -54,6 +74,11 @@ class WorkshopRepository {
 
   static findById(id: string) {
     return this.workshopRepo.findOne({ where: { id } })
+  }
+
+  // Lớp khách được xem: đang mở (lớp đã diễn ra vẫn xem được, chỉ không đăng ký được)
+  static findVisibleBySlug(slug: string) {
+    return this.workshopRepo.findOne({ where: { slug, isActive: true } })
   }
 
   // Các slug đang dùng có dạng `base` hoặc `base-<số>` (bỏ qua lớp `excludeId` khi đang sửa chính nó)

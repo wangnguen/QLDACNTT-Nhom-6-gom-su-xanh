@@ -1,13 +1,21 @@
+import { z } from 'zod/v4'
+
 import { registry } from '@docs/registry'
 
 import { idParamSchema } from '@common/validators'
 
-import { AdminWorkshopQuerySchema, CreateWorkshopBodySchema, UpdateWorkshopBodySchema } from '@modules/workshop/dto'
+import {
+  AdminWorkshopQuerySchema,
+  CreateWorkshopBodySchema,
+  UpdateWorkshopBodySchema,
+  WorkshopQuerySchema
+} from '@modules/workshop/dto'
 
 import {
   WorkshopDetailSchema,
   WorkshopSummarySchema,
   badRequestResponse,
+  conflictResponse,
   forbiddenResponse,
   jsonBody,
   notFoundResponse,
@@ -17,6 +25,50 @@ import {
   unauthorizedResponse,
   validationErrorResponse
 } from './shared'
+
+// ─── US-12: Xem danh sách và chi tiết lớp workshop ───────────────────────────
+
+const PUBLIC_TAG = 'Workshop - Danh sách (US-12)'
+
+registry.registerPath({
+  method: 'get',
+  path: '/workshops',
+  tags: [PUBLIC_TAG],
+  summary: 'Danh sách lớp workshop sắp diễn ra',
+  description: `Không cần đăng nhập. Chỉ trả về lớp đang mở và chưa bắt đầu. Phân trang bằng \`limit\`/\`offset\`.
+
+- \`search\`: tìm theo tên lớp, gõ có dấu hoặc không dấu đều được
+- \`from\`/\`to\`: lớp bắt đầu trong khoảng ngày (YYYY-MM-DD, giờ Việt Nam, tính cả hai ngày)
+- \`availableOnly=true\`: chỉ lớp còn nhận đăng ký (chưa qua hạn và còn chỗ)
+- \`sort\`: \`start_asc\` (mặc định), \`start_desc\`, \`price_asc\`, \`price_desc\`, \`newest\``,
+  request: { query: WorkshopQuerySchema },
+  responses: {
+    200: {
+      description: 'Danh sách lớp',
+      content: { 'application/json': { schema: paginatedWrapper(WorkshopSummarySchema, '/workshops') } }
+    },
+    422: validationErrorResponse()
+  }
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/workshops/{slug}',
+  tags: [PUBLIC_TAG],
+  summary: 'Chi tiết lớp workshop',
+  description:
+    'Không cần đăng nhập. Lớp đang ẩn hoặc đã xoá trả 404. Lớp đã diễn ra vẫn xem được với `availability: closed`.',
+  request: {
+    params: z.object({ slug: z.string().meta({ example: 'lop-vuot-gom-tren-ban-xoay-co-ban' }) })
+  },
+  responses: {
+    200: {
+      description: 'Chi tiết lớp',
+      content: { 'application/json': { schema: successWrapper(WorkshopDetailSchema, '/workshops/{slug}') } }
+    },
+    404: notFoundResponse('Không tìm thấy lớp workshop')
+  }
+})
 
 // ─── US-11: Quản lý lớp workshop (admin) ─────────────────────────────────────
 
@@ -106,7 +158,9 @@ registry.registerPath({
   description: `Chỉ cập nhật các trường được gửi lên. \`imageUrls\` gửi lên sẽ thay toàn bộ danh sách ảnh cũ. Gửi \`isActive: false\` để ẩn lớp.
 
 ${scheduleRules}
-- Dời \`startsAt\` thì giờ mới phải ở tương lai`,
+- Dời \`startsAt\` thì giờ mới phải ở tương lai
+
+\`capacity\` không được nhỏ hơn số chỗ khách đã đặt (\`bookedSeats\`).`,
   security: [{ bearerAuth: [] }],
   request: { params: idParamSchema, ...jsonBody(UpdateWorkshopBodySchema) },
   responses: {
@@ -118,7 +172,7 @@ ${scheduleRules}
         }
       }
     },
-    400: badRequestResponse('Thời gian không hợp lệ'),
+    400: badRequestResponse('Thời gian không hợp lệ / số chỗ nhỏ hơn số chỗ đã đặt'),
     ...adminErrors,
     404: notFoundResponse('Không tìm thấy lớp workshop'),
     422: validationErrorResponse()
@@ -130,12 +184,14 @@ registry.registerPath({
   path: '/admin/workshops/{id}',
   tags: [ADMIN_TAG],
   summary: 'Xoá lớp workshop',
+  description: 'Lớp đã có lượt đăng ký (kể cả đã huỷ) không xoá được, chỉ ẩn được (`isActive: false`).',
   security: [{ bearerAuth: [] }],
   request: { params: idParamSchema },
   responses: {
     200: nullSuccessResponse('/admin/workshops/{id}', 'Đã xoá lớp workshop'),
     ...adminErrors,
     404: notFoundResponse('Không tìm thấy lớp workshop'),
+    409: conflictResponse('Lớp đã có lượt đăng ký nên không xoá được'),
     422: validationErrorResponse('ID không hợp lệ')
   }
 })

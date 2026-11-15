@@ -29,3 +29,45 @@ export const MAX_WORKSHOP_IMAGES = 8
 export const MAX_WORKSHOP_PRICE = 100_000_000
 export const MAX_WORKSHOP_CAPACITY = 200
 export const MAX_WORKSHOP_DURATION_HOURS = 12
+
+export const WORKSHOP_NOT_FOUND_MESSAGE = 'Không tìm thấy lớp workshop'
+
+// Trạng thái nhận đăng ký của một lớp (tính khi trả về, không lưu DB)
+export const WORKSHOP_AVAILABILITY = {
+  OPEN: 'open',
+  // Hết chỗ
+  FULL: 'full',
+  // Đã qua hạn đăng ký
+  CLOSED: 'closed'
+} as const
+
+export type WorkshopAvailability = (typeof WORKSHOP_AVAILABILITY)[keyof typeof WORKSHOP_AVAILABILITY]
+
+// ─── Đăng ký workshop ─────────────────────────────────────────────────────────
+
+export const REGISTRATION_STATUS = {
+  // Chờ cửa hàng xác nhận
+  PENDING: 'pending',
+  CONFIRMED: 'confirmed',
+  // Đã check-in tham gia lớp
+  ATTENDED: 'attended',
+  CANCELLED: 'cancelled'
+} as const
+
+export type RegistrationStatus = (typeof REGISTRATION_STATUS)[keyof typeof REGISTRATION_STATUS]
+
+// Các trạng thái đang giữ chỗ trong lớp — huỷ thì nhả chỗ
+export const SEAT_HOLDING_STATUSES: RegistrationStatus[] = [
+  REGISTRATION_STATUS.PENDING,
+  REGISTRATION_STATUS.CONFIRMED,
+  REGISTRATION_STATUS.ATTENDED
+]
+
+export const REGISTRATION_CANCELLED_BY = {
+  USER: 'user',
+  ADMIN: 'admin'
+} as const
+
+export type RegistrationCancelledBy = (typeof REGISTRATION_CANCELLED_BY)[keyof typeof REGISTRATION_CANCELLED_BY]
+
+export const MAX_SEATS_PER_REGISTRATION = 10
