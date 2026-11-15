@@ -6,6 +6,7 @@ import type { Category } from '@entities/category.entity'
 import type { Product } from '@entities/product.entity'
 import type { RefreshToken } from '@entities/refresh-token.entity'
 import type { User } from '@entities/user.entity'
+import type { WorkshopRegistration } from '@entities/workshop-registration.entity'
 import type { Workshop } from '@entities/workshop.entity'
 
 // Mật khẩu giả lập: test mock hashPassword thành `hashed:<mật khẩu>` để khỏi chạy bcrypt
@@ -118,3 +119,27 @@ export const makeWorkshop = (overrides: Partial<Workshop> = {}): Workshop =>
     deletedAt: null,
     ...overrides
   }) as Workshop
+
+export const makeRegistration = (overrides: Partial<WorkshopRegistration> = {}): WorkshopRegistration =>
+  ({
+    id: 'registration-1',
+    code: 'WS7K3M9Q',
+    workshopId: 'workshop-1',
+    userId: 'user-1',
+    seats: 2,
+    unitPrice: 350000,
+    totalPrice: 700000,
+    contactName: 'Nguyễn Văn An',
+    contactPhone: '0912345678',
+    contactEmail: 'an.nguyen@gmail.com',
+    note: null,
+    status: 'pending',
+    cancelReason: null,
+    cancelledBy: null,
+    cancelledAt: null,
+    workshop: makeWorkshop(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+    ...overrides
+  }) as WorkshopRegistration

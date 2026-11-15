@@ -71,3 +71,19 @@ export const REGISTRATION_CANCELLED_BY = {
 export type RegistrationCancelledBy = (typeof REGISTRATION_CANCELLED_BY)[keyof typeof REGISTRATION_CANCELLED_BY]
 
 export const MAX_SEATS_PER_REGISTRATION = 10
+
+// Đăng ký còn huỷ được: chờ xác nhận hoặc đã xác nhận
+export const CANCELLABLE_STATUSES: RegistrationStatus[] = [REGISTRATION_STATUS.PENDING, REGISTRATION_STATUS.CONFIRMED]
+
+// Khách tự huỷ được tới trước giờ học bao nhiêu tiếng (sau đó phải liên hệ cửa hàng)
+export const REGISTRATION_CANCEL_BEFORE_HOURS = 24
+
+// Cửa hàng check-in được từ bao nhiêu phút trước giờ học
+export const CHECK_IN_OPENS_BEFORE_MINUTES = 60
+
+// Trạng thái admin được chuyển sang
+export const ADMIN_REGISTRATION_ACTIONS = [
+  REGISTRATION_STATUS.CONFIRMED,
+  REGISTRATION_STATUS.ATTENDED,
+  REGISTRATION_STATUS.CANCELLED
+] as const

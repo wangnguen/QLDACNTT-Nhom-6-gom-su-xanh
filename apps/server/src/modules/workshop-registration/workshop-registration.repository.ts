@@ -1,6 +1,6 @@
-import { In, Not } from 'typeorm'
+import { Brackets, In, Not } from 'typeorm'
 
-import { REGISTRATION_STATUS, SEAT_HOLDING_STATUSES } from '@common/constants'
+import { REGISTRATION_STATUS, RegistrationStatus, SEAT_HOLDING_STATUSES } from '@common/constants'
 
 import { WorkshopRegistration } from '@entities/workshop-registration.entity'
 import { Workshop } from '@entities/workshop.entity'
@@ -20,6 +20,21 @@ export type NewRegistrationData = Pick<
   | 'contactEmail'
   | 'note'
 >
+
+export type RegistrationFilter = {
+  userId?: string
+  workshopId?: string
+  status?: RegistrationStatus
+  // Mã đăng ký, tên, số điện thoại hoặc email người liên hệ
+  search?: string
+  limit: number
+  offset: number
+}
+
+export type StatusChange = Pick<WorkshopRegistration, 'status'> &
+  Partial<Pick<WorkshopRegistration, 'cancelReason' | 'cancelledBy' | 'cancelledAt'>>
+
+const escapeLike = (value: string) => value.replace(/[\\%_]/g, (char) => `\\${char}`)
 
 // Trạng thái của lớp đọc ra khi đang giữ khoá: không ai khác đăng ký chen vào được cho tới khi xong
 export type SeatLockState = {
@@ -53,6 +68,45 @@ class WorkshopRegistrationRepository {
 
   static findById(id: string) {
     return this.registrationRepo.findOne({ where: { id }, relations: { workshop: true } })
+  }
+
+  // Mới đăng ký lên trước
+  static findMany(filter: RegistrationFilter): Promise<[WorkshopRegistration[], number]> {
+    const query = this.registrationRepo
+      .createQueryBuilder('registration')
+      .innerJoinAndSelect('registration.workshop', 'workshop')
+
+    if (filter.userId) query.andWhere('registration.userId = :userId', { userId: filter.userId })
+    if (filter.workshopId) query.andWhere('registration.workshopId = :workshopId', { workshopId: filter.workshopId })
+    if (filter.status) query.andWhere('registration.status = :status', { status: filter.status })
+    if (filter.search) {
+      const keyword = `%${escapeLike(filter.search)}%`
+      query.andWhere(
+        new Brackets((where) =>
+          where
+            .where('registration.code ILIKE :keyword', { keyword })
+            .orWhere('registration.contactName ILIKE :keyword')
+            .orWhere('registration.contactPhone LIKE :keyword')
+            .orWhere('registration.contactEmail ILIKE :keyword')
+        )
+      )
+    }
+
+    return query
+      .orderBy('registration.createdAt', 'DESC')
+      .addOrderBy('registration.id', 'ASC')
+      .skip(filter.offset)
+      .take(filter.limit)
+      .getManyAndCount()
+  }
+
+  /**
+   * Đổi trạng thái chỉ khi đăng ký vẫn đang ở một trong `fromStatuses` (một câu UPDATE có điều kiện):
+   * khách huỷ đúng lúc cửa hàng check-in thì chỉ một bên thành công. Trả về false nếu trạng thái đã đổi.
+   */
+  static async changeStatus(id: string, fromStatuses: RegistrationStatus[], change: StatusChange): Promise<boolean> {
+    const result = await this.registrationRepo.update({ id, status: In(fromStatuses) }, change)
+    return (result.affected ?? 0) > 0
   }
 
   /**

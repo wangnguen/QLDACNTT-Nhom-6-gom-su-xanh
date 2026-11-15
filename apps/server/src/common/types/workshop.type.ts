@@ -51,5 +51,9 @@ export type WorkshopRegistrationItem = {
   cancelledBy: RegistrationCancelledBy | null
   cancelledAt: Date | null
   registeredAt: Date
+  // Khách tự huỷ được tới thời điểm này (trước giờ học REGISTRATION_CANCEL_BEFORE_HOURS tiếng)
+  cancellableUntil: Date
+  // Còn huỷ được: chưa huỷ / chưa tham gia và chưa qua cancellableUntil
+  canCancel: boolean
   workshop: WorkshopRef
 }

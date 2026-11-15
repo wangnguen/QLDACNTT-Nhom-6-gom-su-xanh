@@ -266,6 +266,11 @@ export const WorkshopRegistrationSchema = registry.register(
     cancelledBy: z.enum(REGISTRATION_CANCELLED_BY).nullable().meta({ example: null }),
     cancelledAt: z.string().datetime().nullable().meta({ example: null }),
     registeredAt: z.string().datetime().meta({ example: '2026-11-20T03:15:00.000Z' }),
+    cancellableUntil: z.string().datetime().meta({
+      example: '2026-12-04T02:00:00.000Z',
+      description: 'Khách tự huỷ được tới thời điểm này (trước giờ học 24 tiếng)'
+    }),
+    canCancel: z.boolean().meta({ example: true, description: 'Khách còn tự huỷ được không' }),
     workshop: WorkshopRefSchema
   })
 )
