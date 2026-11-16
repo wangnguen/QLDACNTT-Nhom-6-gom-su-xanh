@@ -3,13 +3,12 @@ import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, RotateCw } from 'lucide-react'
-import { productFormSchema, type ProductFormInput } from '@lib/schemas/catalog'
+import { MAX_PRODUCT_IMAGES, productFormSchema, type ProductFormInput } from '@lib/schemas/catalog'
 import { formatPrice } from '@lib/utils'
 import { ErrorBanner, FieldInput, SubmitButton } from '@pages/auth/components'
-import { SelectField, TextareaField } from '@components/form'
+import { ImageUrlsField, SelectField, TextareaField } from '@components/form'
 import { PageHeader, Switch } from '@components/ui'
 import { FullPageSpinner } from '@components/Spinner'
-import { ImageUrlsField } from './components/ImageUrlsField'
 import { useProductFormStore } from './store'
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
@@ -146,7 +145,13 @@ export default function ProductFormPage() {
           </Card>
 
           <Card title='Hình ảnh'>
-            <ImageUrlsField control={control} register={register} errors={errors} />
+            <ImageUrlsField
+              control={control}
+              register={register}
+              errors={errors}
+              max={MAX_PRODUCT_IMAGES}
+              emptyText='Chưa có ảnh. Sản phẩm không có ảnh sẽ hiện ảnh mặc định ở trang khách hàng.'
+            />
           </Card>
         </div>
 

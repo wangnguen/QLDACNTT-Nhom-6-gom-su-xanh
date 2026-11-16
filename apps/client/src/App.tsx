@@ -18,11 +18,14 @@ import { AccountLayout } from './pages/account/components'
 import ProfilePage from './pages/account/profile'
 import ChangeEmailPage from './pages/account/change-email'
 import ChangePasswordPage from './pages/account/change-password'
+import MyWorkshopsPage from './pages/account/workshops'
 
 import HomePage from './pages/home'
 import ProductsPage from './pages/products'
 import ProductDetailPage from './pages/product-detail'
 import CartPage from './pages/cart'
+import WorkshopsPage from './pages/workshops'
+import WorkshopDetailPage from './pages/workshop-detail'
 import NotFoundPage from './pages/not-found'
 
 function App() {
@@ -72,6 +75,24 @@ function App() {
           element={
             <AppLayout>
               <ProductDetailPage />
+            </AppLayout>
+          }
+        />
+
+        {/* US-12 — xem lịch workshop không cần đăng nhập, đăng ký thì cần */}
+        <Route
+          path='/workshops'
+          element={
+            <AppLayout>
+              <WorkshopsPage />
+            </AppLayout>
+          }
+        />
+        <Route
+          path='/workshops/:slug'
+          element={
+            <AppLayout>
+              <WorkshopDetailPage />
             </AppLayout>
           }
         />
@@ -137,6 +158,8 @@ function App() {
           <Route index element={<ProfilePage />} />
           <Route path='email' element={<ChangeEmailPage />} />
           <Route path='password' element={<ChangePasswordPage />} />
+          {/* US-13 — lịch workshop của tôi */}
+          <Route path='workshops' element={<MyWorkshopsPage />} />
         </Route>
 
         <Route path='*' element={<NotFoundPage />} />

@@ -3,15 +3,17 @@ import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { useAuthStore } from '@stores/authStore'
 import { ProductCard, ProductCardSkeleton } from '@components/product'
+import { WorkshopCard, WorkshopCardSkeleton } from '@components/workshop'
 import { useHomeStore } from './store'
 
 export default function HomePage() {
   const { user, isAuthenticated } = useAuthStore()
-  const { newestProducts, fetchNewestProducts } = useHomeStore()
+  const { newestProducts, upcomingWorkshops, fetchNewestProducts, fetchUpcomingWorkshops } = useHomeStore()
 
   useEffect(() => {
     fetchNewestProducts()
-  }, [fetchNewestProducts])
+    fetchUpcomingWorkshops()
+  }, [fetchNewestProducts, fetchUpcomingWorkshops])
 
   return (
     <>
@@ -69,6 +71,27 @@ export default function HomePage() {
             {newestProducts
               ? newestProducts.map((product) => <ProductCard key={product.id} product={product} />)
               : Array.from({ length: 4 }, (_, i) => <ProductCardSkeleton key={i} />)}
+          </div>
+        </section>
+      )}
+
+      {/* US-12: Lớp workshop sắp diễn ra còn nhận đăng ký; không có lớp nào thì ẩn mục này */}
+      {upcomingWorkshops?.length !== 0 && (
+        <section className='mx-auto max-w-6xl px-4 pb-20 sm:px-6'>
+          <div className='mb-6 flex items-end justify-between gap-4'>
+            <div>
+              <p className='text-sm font-bold tracking-[0.2em] text-leaf uppercase'>Tự tay làm gốm</p>
+              <h2 className='mt-1 font-display text-3xl font-bold text-moss sm:text-4xl'>Workshop sắp diễn ra</h2>
+            </div>
+            <Link to='/workshops' className='link inline-flex shrink-0 items-center gap-1 text-sm'>
+              Xem lịch
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+          <div className='grid gap-5 sm:grid-cols-2 lg:grid-cols-3'>
+            {upcomingWorkshops
+              ? upcomingWorkshops.map((workshop) => <WorkshopCard key={workshop.id} workshop={workshop} />)
+              : Array.from({ length: 3 }, (_, i) => <WorkshopCardSkeleton key={i} />)}
           </div>
         </section>
       )}

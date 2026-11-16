@@ -2,6 +2,8 @@ import { z, ZodType } from 'zod/v4'
 
 import { registry } from '@docs/registry'
 
+import { REGISTRATION_CANCELLED_BY, REGISTRATION_STATUS, WORKSHOP_AVAILABILITY } from '@common/constants'
+
 type NamedExample = { summary?: string; description?: string; value?: unknown }
 
 export const jsonBody = (schema: ZodType, examples?: Record<string, NamedExample>) => ({
@@ -183,5 +185,92 @@ export const ProductDetailSchema = registry.register(
     imageUrls: z.array(z.string().url()).meta({
       example: ['https://example.com/images/binh-hoa-sen-1.jpg', 'https://example.com/images/binh-hoa-sen-2.jpg']
     })
+  })
+)
+
+export const WorkshopSummarySchema = registry.register(
+  'WorkshopSummary',
+  z.object({
+    id: z.string().uuid().meta({ example: '5b6c7d8e-9f01-4234-8567-89abcdef0123' }),
+    name: z.string().meta({ example: 'Lớp vuốt gốm trên bàn xoay cơ bản' }),
+    slug: z.string().meta({ example: 'lop-vuot-gom-tren-ban-xoay-co-ban' }),
+    imageUrl: z
+      .string()
+      .url()
+      .nullable()
+      .meta({ example: 'https://example.com/images/lop-vuot-gom-1.jpg', description: 'Ảnh đại diện (ảnh đầu tiên)' }),
+    instructor: z.string().nullable().meta({ example: 'Nghệ nhân Lê Văn Thành' }),
+    location: z.string().meta({ example: 'Xưởng Gốm Sứ Xanh, 12 Bát Tràng, Gia Lâm, Hà Nội' }),
+    startsAt: z.string().datetime().meta({ example: '2026-12-05T02:00:00.000Z' }),
+    endsAt: z.string().datetime().meta({ example: '2026-12-05T04:30:00.000Z' }),
+    registrationClosesAt: z.string().datetime().meta({
+      example: '2026-12-04T13:00:00.000Z',
+      description: 'Thời điểm đóng đăng ký: hạn đăng ký nếu có, không thì là giờ bắt đầu'
+    }),
+    price: z.number().int().meta({ example: 350000, description: 'Học phí mỗi chỗ (VND), 0 = miễn phí' }),
+    capacity: z.number().int().meta({ example: 12, description: 'Số chỗ tối đa' }),
+    bookedSeats: z.number().int().meta({ example: 9, description: 'Số chỗ đang được giữ (đăng ký chưa huỷ)' }),
+    seatsLeft: z.number().int().meta({ example: 3 }),
+    availability: z.enum(WORKSHOP_AVAILABILITY).meta({
+      example: 'open',
+      description: '`open` = đang nhận đăng ký; `full` = hết chỗ; `closed` = đã qua hạn đăng ký'
+    }),
+    isActive: z.boolean().meta({ example: true })
+  })
+)
+
+export const WorkshopDetailSchema = registry.register(
+  'WorkshopDetail',
+  WorkshopSummarySchema.extend({
+    description: z.string().nullable().meta({
+      example: 'Làm quen với đất sét, định tâm và vuốt một chiếc cốc hoặc bát nhỏ cùng nghệ nhân.'
+    }),
+    registrationDeadline: z.string().datetime().nullable().meta({
+      example: '2026-12-04T13:00:00.000Z',
+      description: 'Hạn đăng ký admin đặt; `null` = nhận đăng ký tới giờ bắt đầu'
+    }),
+    imageUrls: z.array(z.string().url()).meta({ example: ['https://example.com/images/lop-vuot-gom-1.jpg'] })
+  })
+)
+
+export const WorkshopRefSchema = registry.register(
+  'WorkshopRef',
+  WorkshopSummarySchema.pick({
+    id: true,
+    name: true,
+    slug: true,
+    imageUrl: true,
+    location: true,
+    startsAt: true,
+    endsAt: true
+  })
+)
+
+export const WorkshopRegistrationSchema = registry.register(
+  'WorkshopRegistration',
+  z.object({
+    id: z.string().uuid().meta({ example: 'e1f2a3b4-c5d6-4789-8abc-def012345678' }),
+    code: z.string().meta({ example: 'WS7K3M9Q', description: 'Mã đăng ký, khách đọc khi check-in' }),
+    seats: z.number().int().meta({ example: 2 }),
+    unitPrice: z.number().int().meta({ example: 350000, description: 'Học phí mỗi chỗ lúc đăng ký (VND)' }),
+    totalPrice: z.number().int().meta({ example: 700000, description: 'seats × unitPrice' }),
+    contactName: z.string().meta({ example: 'Nguyễn Văn An' }),
+    contactPhone: z.string().meta({ example: '0912345678' }),
+    contactEmail: z.string().email().meta({ example: 'nguyenvanan@gmail.com' }),
+    note: z.string().nullable().meta({ example: 'Đi cùng một bé 8 tuổi' }),
+    status: z.enum(REGISTRATION_STATUS).meta({
+      example: 'pending',
+      description: '`pending` = chờ xác nhận; `confirmed` = đã xác nhận; `attended` = đã tham gia; `cancelled` = đã huỷ'
+    }),
+    cancelReason: z.string().nullable().meta({ example: null }),
+    cancelledBy: z.enum(REGISTRATION_CANCELLED_BY).nullable().meta({ example: null }),
+    cancelledAt: z.string().datetime().nullable().meta({ example: null }),
+    registeredAt: z.string().datetime().meta({ example: '2026-11-20T03:15:00.000Z' }),
+    cancellableUntil: z.string().datetime().meta({
+      example: '2026-12-04T02:00:00.000Z',
+      description: 'Khách tự huỷ được tới thời điểm này (trước giờ học 24 tiếng)'
+    }),
+    canCancel: z.boolean().meta({ example: true, description: 'Khách còn tự huỷ được không' }),
+    workshop: WorkshopRefSchema
   })
 )

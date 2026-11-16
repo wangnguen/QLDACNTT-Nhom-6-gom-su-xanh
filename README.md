@@ -74,9 +74,12 @@ Fill in `apps/server/.env`:
 ### 3. Create tables and the admin account
 
 ```bash
-pnpm migration:run   # creates the users, auth_tokens and refresh_tokens tables
+pnpm migration:run   # creates all tables (re-run it after pulling code that adds a migration)
 pnpm seed:admin      # creates/updates the admin from ADMIN_EMAIL/ADMIN_PASSWORD (re-run it to reset the admin password)
+pnpm seed:sample     # optional: sample categories and products with images, safe to re-run
 ```
+
+If a page shows `relation "..." does not exist`, a migration has not been applied yet: run `pnpm migration:run`.
 
 ### 4. Run
 
@@ -101,6 +104,7 @@ The client and admin call the API through the Vite proxy (`/api` → `localhost:
 | `pnpm test:e2e` / `pnpm test:e2e:ui`                                                  | Run E2E browser tests (see below)             |
 | `pnpm migration:run`                                                                  | Apply migrations to the database              |
 | `pnpm seed:admin`                                                                     | Create the admin account                      |
+| `pnpm seed:sample`                                                                    | Add sample data (skips what already exists)   |
 | `pnpm --filter @gsx/server migration:generate src/databases/migrations/MigrationName` | Generate a migration after changing an entity |
 | `pnpm --filter @gsx/server migration:revert`                                          | Revert the latest migration                   |
 

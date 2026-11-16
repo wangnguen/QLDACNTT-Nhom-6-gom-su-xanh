@@ -1,6 +1,16 @@
 import type { ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { BookOpen, CalendarDays, FolderTree, LayoutDashboard, LogOut, Package, ReceiptText, Users } from 'lucide-react'
+import {
+  BookOpen,
+  CalendarDays,
+  ClipboardList,
+  FolderTree,
+  LayoutDashboard,
+  LogOut,
+  Package,
+  ReceiptText,
+  Users
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@stores/authStore'
 import { cn } from '@lib/utils'
@@ -9,13 +19,14 @@ import { Logo } from '../Logo'
 const NAV_ITEMS = [
   { to: '/', label: 'Tổng quan', icon: LayoutDashboard, end: true },
   { to: '/products', label: 'Sản phẩm', icon: Package, end: false },
-  { to: '/categories', label: 'Danh mục', icon: FolderTree, end: false }
+  { to: '/categories', label: 'Danh mục', icon: FolderTree, end: false },
+  { to: '/workshops', label: 'Workshop', icon: CalendarDays, end: false },
+  { to: '/workshop-registrations', label: 'Đăng ký workshop', icon: ClipboardList, end: false }
 ]
 
 // Các module sẽ làm ở sprint sau — hiển thị trước để định hình bố cục
 const UPCOMING_ITEMS = [
   { label: 'Đơn hàng', icon: ReceiptText },
-  { label: 'Workshop', icon: CalendarDays },
   { label: 'Bài viết', icon: BookOpen },
   { label: 'Khách hàng', icon: Users }
 ]

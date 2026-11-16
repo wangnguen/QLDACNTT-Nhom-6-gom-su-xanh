@@ -19,7 +19,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "migration:run": "pnpm --filter @gsx/server migration:run",
-    "seed:admin": "pnpm --filter @gsx/server seed:admin"
+    "seed:admin": "pnpm --filter @gsx/server seed:admin",
+    "seed:sample": "pnpm --filter @gsx/server seed:sample"
   },
   "devDependencies": {
     "prettier": "^3.8.1"

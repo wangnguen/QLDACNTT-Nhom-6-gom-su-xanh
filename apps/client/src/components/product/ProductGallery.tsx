@@ -1,20 +1,27 @@
 import { useState } from 'react'
 import { cn } from '@lib/utils'
-import { ProductImage } from '@components/product'
+import { ProductImage } from './ProductImage'
 
 interface Props {
   name: string
   imageUrls: string[]
+  // Tỉ lệ ảnh lớn, mặc định vuông (sản phẩm); lớp workshop dùng 4:3
+  aspectClass?: string
 }
 
 // Ảnh lớn + dãy ảnh nhỏ để chọn; sản phẩm không có ảnh thì hiện ảnh mặc định
-export function ProductGallery({ name, imageUrls }: Props) {
+export function ProductGallery({ name, imageUrls, aspectClass = 'aspect-square' }: Props) {
   const [selected, setSelected] = useState(0)
   const current = imageUrls[selected] ?? imageUrls[0] ?? null
 
   return (
     <div>
-      <div className='aspect-square overflow-hidden rounded-[var(--radius-organic)] border border-clay/60 bg-cream shadow-sm'>
+      <div
+        className={cn(
+          'overflow-hidden rounded-[var(--radius-organic)] border border-clay/60 bg-cream shadow-sm',
+          aspectClass
+        )}
+      >
         <ProductImage src={current} alt={name} loading='eager' className='h-full w-full' />
       </div>
 
