@@ -1,13 +1,12 @@
 import type { ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { BookOpen, CalendarDays, FolderTree, LayoutDashboard, LogOut, Package, ReceiptText, Users } from 'lucide-react'
+import { BookOpen, FolderTree, LayoutDashboard, LogOut, Package, ReceiptText, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@stores/authStore'
 import { cn } from '@lib/utils'
 import { Logo } from '../Logo'
 
 const NAV_ITEMS = [
-  { to: '/workshops', label: 'Workshop', icon: CalendarDays, end: false },
   { to: '/', label: 'Tổng quan', icon: LayoutDashboard, end: true },
   { to: '/products', label: 'Sản phẩm', icon: Package, end: false },
   { to: '/categories', label: 'Danh mục', icon: FolderTree, end: false }

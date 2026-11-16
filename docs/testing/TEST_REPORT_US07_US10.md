@@ -1,8 +1,6 @@
-> Cập nhật lần tiếp tục 15/11/2026 từ base 8f5ec91: xem [báo cáo mới](TEST_REPORT_SCRUM24_30_CONTINUATION.md), [ma trận bổ sung](TEST_CASES_SCRUM24_30_CONTINUATION.md) và [comment Jira mới](JIRA_HANDOFF_SCRUM24_30_CONTINUATION.md). Phần dưới giữ nguyên kết quả lịch sử; 4 nhóm Not Run đã được bổ sung kiểm thử, FE-01 đã được sửa và có regression desktop/mobile. Quy tắc và hướng dẫn Workshop ở [WORKSHOP_IMPLEMENTATION.md](WORKSHOP_IMPLEMENTATION.md).
+> Bàn giao hiện tại ngày 16/11/2026: [báo cáo SCRUM-24–27](TEST_REPORT_SCRUM24_27_CONTINUATION.md), [ma trận bổ sung](TEST_CASES_SCRUM24_27_CONTINUATION.md), [comment Jira dự thảo](JIRA_HANDOFF_SCRUM24_27_CONTINUATION.md). Phần dưới là lịch sử ngày 15/11/2026, trước các test bổ sung và bản sửa FE-01.
 
-# Báo cáo kiểm thử US07–US10 — lịch sử trước 8f5ec91
-
-Tài liệu bàn giao hiện tại: [báo cáo chính SCRUM-24–30](TEST_REPORT_SCRUM24_30_CONTINUATION.md). Các chữ “cuối”, số Pass/Fail và giới hạn bên dưới chỉ mô tả lần chạy lịch sử này.
+# Báo cáo kiểm thử US07–US10 — lịch sử 15/11/2026
 
 Ngày: 15/11/2026 (Asia/Bangkok). Người bàn giao: Hưng. Commit nền: `884f933` (Merge PR #8 feat/ui-catalog-cart). Nhánh: `test/sprint-2-us07-us10`, dùng tiếp nhánh hiện có. Working tree ban đầu sạch; không tìm thấy AGENTS.md trong workspace/repo. Đã đọc README, scripts của 5 package, workspace/lockfile, Vitest, Playwright, setup database/mail/helpers và các lớp FE/route/DTO/service/repository liên quan.
 

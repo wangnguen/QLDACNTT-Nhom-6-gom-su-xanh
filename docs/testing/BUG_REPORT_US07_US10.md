@@ -1,19 +1,12 @@
-> Cập nhật lần tiếp tục 15/11/2026 từ base 8f5ec91: xem [báo cáo mới](TEST_REPORT_SCRUM24_30_CONTINUATION.md), [ma trận bổ sung](TEST_CASES_SCRUM24_30_CONTINUATION.md) và [comment Jira mới](JIRA_HANDOFF_SCRUM24_30_CONTINUATION.md). Phần dưới giữ nguyên kết quả lịch sử; 4 nhóm Not Run đã được bổ sung kiểm thử, FE-01 đã được sửa và có regression desktop/mobile. Quy tắc và hướng dẫn Workshop ở [WORKSHOP_IMPLEMENTATION.md](WORKSHOP_IMPLEMENTATION.md).
+> Bàn giao hiện tại ngày 16/11/2026: [báo cáo SCRUM-24–27](TEST_REPORT_SCRUM24_27_CONTINUATION.md), [ma trận bổ sung](TEST_CASES_SCRUM24_27_CONTINUATION.md), [comment Jira dự thảo](JIRA_HANDOFF_SCRUM24_27_CONTINUATION.md). Phần dưới là lịch sử ngày 15/11/2026, trước các test bổ sung và bản sửa FE-01.
 
-# Phân loại lỗi US07–US10
+Bản sửa FE-01 vẫn được giữ: overflow-wrap:anywhere tại vùng chi tiết, tên và danh mục; header flex-wrap. Kết quả regression desktop/mobile hiện tại xem báo cáo mới.
 
-## Bổ sung lần tiếp tục từ 8f5ec91
-
-- FE-01: đã sửa `[overflow-wrap:anywhere]` cho vùng detail/h1/danh mục; kiểm chuỗi 140 ký tự không khoảng trắng, desktop1280 và mobile390 đều không tràn (scrollWidth <= viewport). Header có thêm Workshop được wrap để không đẩy tràn mobile. Minh chứng mới trong SCRUM26-layout-1280/390.png; 37 E2E regression Pass. Mức độ layout không dùng làm kết luận toàn bộ AC.
-- W-FE-01 (đã sửa trong đợt phát triển): trước là `(await http.get('/admin/workshops')).data.data`, sau là `(await http.get('/admin/workshops')).data`. Client tương tự với `/workshops`, danh sách đăng ký với `/admin/workshop-registrations`. Interceptor đã gán `response.data = body.data` nên `.data` của response Axios là payload; đọc thêm lần nữa trả undefined và UI crash khi đọc length. Tái hiện ở targeted.log/targeted-2.log; test UI cuối đã Pass. Không có thay đổi code Axios/UI mới trong rà soát cuối.
-- W-TEST-01 (đã sửa): getByLabel exact cho select Lọc lớp không khớp label chứa option text; bổ sung aria-label rõ ràng, không bỏ assertion. targeted-3.log timeout, targeted-final/regression Pass.
-- ENV capture screenshot: một lần C25 gặp lỗi Chromium Page.captureScreenshot, assertions nghiệp vụ trước đó đã qua; không ghi là product failure. Targeted-final và regression sau đó chụp thành công, artifact lỗi được giữ ở second-failure.
-- Rà soát cuối: bổ sung 8 API/DB test đăng ký lại và register cạnh tranh với giảm capacity/hủy lớp; 8/8 targeted, 45/45 regression Pass. Không phát hiện lỗi nghiệp vụ mới; không đổi code service hoặc migration. JSON minh chứng ở `e2e/.tmp/final-review/consistency-results/` và report hiện tại.
-- Không có lỗi nghiệp vụ mở đã xác minh sau run cuối; các giả định Workshop chờ nhóm review ghi trong [WORKSHOP_IMPLEMENTATION.md](WORKSHOP_IMPLEMENTATION.md). Phần bên dưới là lịch sử trước sửa; các mô tả “chưa sửa/chưa test” là tình trạng lúc phát hiện, không phải trạng thái hiện tại.
+# Phân loại lỗi US07–US10 — lịch sử 15/11/2026
 
 Các assertion chức năng chưa phát hiện lỗi sản phẩm FE/BE. Có một quan sát giao diện dưới đây từ screenshot thật. Chưa có AC chi tiết nên đây không phải chứng nhận toàn bộ nghiệp vụ đúng.
 
-## Lịch sử FE-01 — Tên có chuỗi dài liền nhau tràn ngang trang chi tiết
+## FE-01 — Tên có chuỗi dài liền nhau tràn ngang trang chi tiết
 
 - Mức độ đề xuất: Low, hiển thị; cần Cảnh xác nhận tiêu chuẩn giao diện/tên hợp lệ thực tế.
 - Dữ liệu: tên hợp lệ qua API `E2E pottery edf71f9f2ad84c3d900dad934eda48da`, giá 125000, mô tả và ảnh test hợp lệ.
@@ -62,6 +55,6 @@ Các assertion chức năng chưa phát hiện lỗi sản phẩm FE/BE. Có m�
 
 PowerShell chặn npx.ps1, dùng npx.cmd; pnpm chưa được cài toàn cục nên dùng phiên bản 10.32.1 qua npx. Sandbox chặn registry/cache, chạy lại qua cơ chế cấp quyền. Build cảnh báo bundle >500 kB nhưng exit 0. Cảnh báo NO_COLOR/FORCE_COLOR không phải failure nghiệp vụ. pnpm có thể in thêm “Command playwright not found” sau một lần Playwright exit 1; nguyên nhân thực cần đọc assertion/global setup phía trên, không suy ra thiếu Playwright từ dòng cuối.
 
-## Lịch sử yêu cầu đối chiếu AC trước lần tiếp tục
+## Cần đối chiếu AC
 
 Cảnh xác nhận các quy tắc ẩn sản phẩm/danh mục, normalize tên trùng, giới hạn số lượng, fallback ảnh và xử lý guest. Quang/Khôi chỉ nhận lỗi FE/BE khi có tái hiện và oracle được duyệt; Bình nghiệm thu sau khi rà soát các ca Not Run. Không tự chuyển Done.

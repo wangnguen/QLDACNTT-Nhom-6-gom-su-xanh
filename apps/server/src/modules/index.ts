@@ -11,7 +11,6 @@ import HealthRoute from '@modules/health/health.route'
 import AdminProductRoute from '@modules/product/product.admin.route'
 import ProductRoute from '@modules/product/product.route'
 import UserRoute from '@modules/user/user.route'
-import { publicWorkshopRoute, adminWorkshopRoute, adminRegistrationRoute } from '@modules/workshop/workshop.route'
 
 const router = Router()
 
@@ -23,9 +22,6 @@ router.use('/users', AuthenticateMiddleware.authenticate, UserRoute)
 router.use('/categories', CategoryRoute)
 router.use('/products', ProductRoute)
 router.use('/cart', AuthenticateMiddleware.authenticate, CartRoute)
-router.use('/workshops', publicWorkshopRoute)
-router.use('/admin/workshops', ...adminOnly, adminWorkshopRoute)
-router.use('/admin/workshop-registrations', ...adminOnly, adminRegistrationRoute)
 
 router.use('/admin/categories', ...adminOnly, AdminCategoryRoute)
 router.use('/admin/products', ...adminOnly, AdminProductRoute)

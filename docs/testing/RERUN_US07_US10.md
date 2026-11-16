@@ -1,4 +1,4 @@
-> Cập nhật lần tiếp tục 15/11/2026 từ base 8f5ec91: xem [báo cáo mới](TEST_REPORT_SCRUM24_30_CONTINUATION.md), [ma trận bổ sung](TEST_CASES_SCRUM24_30_CONTINUATION.md) và [comment Jira mới](JIRA_HANDOFF_SCRUM24_30_CONTINUATION.md). Phần dưới giữ nguyên kết quả lịch sử; 4 nhóm Not Run đã được bổ sung kiểm thử, FE-01 đã được sửa và có regression desktop/mobile. Quy tắc và hướng dẫn Workshop ở [WORKSHOP_IMPLEMENTATION.md](WORKSHOP_IMPLEMENTATION.md).
+> Bàn giao hiện tại ngày 16/11/2026: [báo cáo SCRUM-24–27](TEST_REPORT_SCRUM24_27_CONTINUATION.md), [ma trận bổ sung](TEST_CASES_SCRUM24_27_CONTINUATION.md), [comment Jira dự thảo](JIRA_HANDOFF_SCRUM24_27_CONTINUATION.md). Phần dưới là lịch sử ngày 15/11/2026, trước các test bổ sung và bản sửa FE-01.
 
 # Chạy lại trên Windows PowerShell
 

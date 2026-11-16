@@ -26,9 +26,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
           {initialized && (
             <nav className='flex flex-wrap items-center gap-1.5 sm:gap-3'>
-              <Link to='/workshops' className='text-sm font-semibold' aria-label='Workshop'>
-                Workshop
-              </Link>
               {/* US-08: Xem danh sách sản phẩm — mobile chỉ hiện biểu tượng */}
               <NavLink
                 to='/products'
