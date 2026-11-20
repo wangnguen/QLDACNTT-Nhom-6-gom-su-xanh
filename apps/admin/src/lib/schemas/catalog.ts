@@ -43,16 +43,9 @@ const integerField = (label: string, min: number, max: number) =>
     .min(min, min > 0 ? `${label} phải lớn hơn 0` : `${label} không được âm`)
     .max(max, `${label} tối đa ${max.toLocaleString('vi-VN')}`)
 
-export const productFormSchema = z.object({
-  name: nameField('Tên sản phẩm', 255),
-  categoryId: z.string().min(1, 'Vui lòng chọn danh mục'),
-  price: integerField('Giá bán', 1, MAX_PRODUCT_PRICE),
-  stock: integerField('Tồn kho', 0, MAX_PRODUCT_STOCK),
-  material: textField('Chất liệu', 100),
-  dimensions: textField('Kích thước', 100),
-  description: textField('Mô tả', 5000),
-  // useFieldArray cần mảng object
-  images: z
+// Danh sách link ảnh (ảnh đầu tiên là ảnh đại diện); useFieldArray cần mảng object — dùng chung với form workshop
+export const imagesField = (max: number) =>
+  z
     .array(
       z.object({
         url: z
@@ -63,11 +56,18 @@ export const productFormSchema = z.object({
           .refine(isImageUrl, IMAGE_URL_MESSAGE)
       })
     )
-    .max(MAX_PRODUCT_IMAGES, `Tối đa ${MAX_PRODUCT_IMAGES} ảnh`)
-    .refine(
-      (images) => new Set(images.map((image) => image.url.trim())).size === images.length,
-      'Có link ảnh bị trùng'
-    ),
+    .max(max, `Tối đa ${max} ảnh`)
+    .refine((images) => new Set(images.map((image) => image.url.trim())).size === images.length, 'Có link ảnh bị trùng')
+
+export const productFormSchema = z.object({
+  name: nameField('Tên sản phẩm', 255),
+  categoryId: z.string().min(1, 'Vui lòng chọn danh mục'),
+  price: integerField('Giá bán', 1, MAX_PRODUCT_PRICE),
+  stock: integerField('Tồn kho', 0, MAX_PRODUCT_STOCK),
+  material: textField('Chất liệu', 100),
+  dimensions: textField('Kích thước', 100),
+  description: textField('Mô tả', 5000),
+  images: imagesField(MAX_PRODUCT_IMAGES),
   isActive: z.boolean()
 })
 

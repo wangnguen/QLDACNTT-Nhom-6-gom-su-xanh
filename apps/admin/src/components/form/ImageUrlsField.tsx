@@ -1,20 +1,31 @@
 import { useFieldArray, useWatch, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form'
 import { ArrowUp, CircleAlert, ImagePlus, Trash2 } from 'lucide-react'
-import { MAX_PRODUCT_IMAGES, type ProductFormInput } from '@lib/schemas/catalog'
 import { cn } from '@lib/utils'
 import { Thumbnail } from '@components/ui'
 
-interface Props {
-  control: Control<ProductFormInput>
-  register: UseFormRegister<ProductFormInput>
-  errors: FieldErrors<ProductFormInput>
+// Form nào có trường `images: { url }[]` cũng dùng được (sản phẩm, lớp workshop)
+type ImagesForm = { images: { url: string }[] }
+
+interface Props<T extends ImagesForm> {
+  control: Control<T>
+  register: UseFormRegister<T>
+  errors: FieldErrors<T>
+  max: number
+  // Nội dung hiện khi chưa có ảnh nào
+  emptyText: string
 }
 
 const iconButton =
   'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-moss/5 hover:text-moss disabled:pointer-events-none disabled:opacity-30'
 
 // Danh sách link ảnh: ảnh đầu tiên là ảnh đại diện, có thể đưa ảnh khác lên đầu
-export function ImageUrlsField({ control, register, errors }: Props) {
+export function ImageUrlsField<T extends ImagesForm>(props: Props<T>) {
+  // react-hook-form không suy được đường dẫn `images` trên kiểu generic nên thu hẹp về đúng phần form dùng tới
+  const control = props.control as unknown as Control<ImagesForm>
+  const register = props.register as unknown as UseFormRegister<ImagesForm>
+  const errors = props.errors as FieldErrors<ImagesForm>
+  const { max, emptyText } = props
+
   const { fields, append, remove, move } = useFieldArray({ control, name: 'images' })
   const images = useWatch({ control, name: 'images' })
   const listError = errors.images?.message ?? errors.images?.root?.message
@@ -23,7 +34,7 @@ export function ImageUrlsField({ control, register, errors }: Props) {
     <div>
       {fields.length === 0 ? (
         <div className='rounded-xl border border-dashed border-clay bg-sand/50 px-4 py-8 text-center text-sm text-muted'>
-          Chưa có ảnh. Sản phẩm không có ảnh sẽ hiện ảnh mặc định ở trang khách hàng.
+          {emptyText}
         </div>
       ) : (
         <ol className='space-y-3'>
@@ -100,14 +111,14 @@ export function ImageUrlsField({ control, register, errors }: Props) {
         <button
           type='button'
           onClick={() => append({ url: '' }, { shouldFocus: true })}
-          disabled={fields.length >= MAX_PRODUCT_IMAGES}
+          disabled={fields.length >= max}
           className='btn-outline'
         >
           <ImagePlus size={16} />
           Thêm link ảnh
         </button>
         <span className='text-xs text-muted'>
-          {fields.length}/{MAX_PRODUCT_IMAGES} ảnh
+          {fields.length}/{max} ảnh
         </span>
       </div>
     </div>

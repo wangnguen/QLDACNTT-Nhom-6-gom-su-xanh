@@ -15,3 +15,10 @@ export const safeEqual = (a: string, b: string): boolean => {
   const bufferB = Buffer.from(b)
   return bufferA.length === bufferB.length && timingSafeEqual(bufferA, bufferB)
 }
+
+// Bỏ các ký tự dễ nhầm (0/O, 1/I/L) để khách đọc mã qua điện thoại không bị sai
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+
+// Mã ngắn ngẫu nhiên, vd mã đăng ký workshop "WS7K3M9Q"
+export const generateCode = (prefix: string, length = 6): string =>
+  prefix + Array.from({ length }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join('')

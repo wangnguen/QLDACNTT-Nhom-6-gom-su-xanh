@@ -17,7 +17,8 @@
     "migration:generate": "pnpm typeorm migration:generate -p -d src/databases/cli-data-source.ts",
     "migration:run": "pnpm typeorm migration:run -d src/databases/cli-data-source.ts",
     "migration:revert": "pnpm typeorm migration:revert -d src/databases/cli-data-source.ts",
-    "seed:admin": "node -r @swc-node/register src/databases/seeds/admin.seed.ts"
+    "seed:admin": "node -r @swc-node/register src/databases/seeds/admin.seed.ts",
+    "seed:sample": "node -r @swc-node/register src/databases/seeds/sample.seed.ts"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.5.0",
