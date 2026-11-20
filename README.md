@@ -1,5 +1,7 @@
 # 🏺 Gốm Sứ Xanh
 
+Bàn giao kiểm thử SCRUM-24–27: [báo cáo hiện tại](docs/testing/TEST_REPORT_SCRUM24_27_CONTINUATION.md).
+
 An e-commerce platform for handmade ceramics and pottery workshop bookings. This monorepo contains three apps:
 
 | App           | Stack                                                                      | Dev URL                                    |
