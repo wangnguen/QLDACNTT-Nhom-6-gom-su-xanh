@@ -15,6 +15,8 @@ import ProductFormPage from './pages/products/form'
 import WorkshopsPage from './pages/workshops'
 import WorkshopFormPage from './pages/workshops/form'
 import WorkshopRegistrationsPage from './pages/workshop-registrations'
+import OrdersPage from './pages/orders'
+import OrderDetailPage from './pages/orders/detail'
 import NotFoundPage from './pages/not-found'
 
 function App() {
@@ -65,6 +67,10 @@ function App() {
 
           {/* US-13: Quản lý đăng ký workshop */}
           <Route path='/workshop-registrations' element={<WorkshopRegistrationsPage />} />
+
+          {/* US-18: Quản lý đơn hàng */}
+          <Route path='/orders' element={<OrdersPage />} />
+          <Route path='/orders/:id' element={<OrderDetailPage />} />
         </Route>
 
         <Route path='*' element={<NotFoundPage />} />

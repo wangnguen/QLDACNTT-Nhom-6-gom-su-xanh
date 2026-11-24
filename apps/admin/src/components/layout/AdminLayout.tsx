@@ -21,12 +21,12 @@ const NAV_ITEMS = [
   { to: '/products', label: 'Sản phẩm', icon: Package, end: false },
   { to: '/categories', label: 'Danh mục', icon: FolderTree, end: false },
   { to: '/workshops', label: 'Workshop', icon: CalendarDays, end: false },
-  { to: '/workshop-registrations', label: 'Đăng ký workshop', icon: ClipboardList, end: false }
+  { to: '/workshop-registrations', label: 'Đăng ký workshop', icon: ClipboardList, end: false },
+  { to: '/orders', label: 'Đơn hàng', icon: ReceiptText, end: false }
 ]
 
 // Các module sẽ làm ở sprint sau — hiển thị trước để định hình bố cục
 const UPCOMING_ITEMS = [
-  { label: 'Đơn hàng', icon: ReceiptText },
   { label: 'Bài viết', icon: BookOpen },
   { label: 'Khách hàng', icon: Users }
 ]
