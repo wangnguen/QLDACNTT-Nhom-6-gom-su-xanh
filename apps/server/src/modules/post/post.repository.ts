@@ -9,6 +9,10 @@ import AppDataSource from '@databases/data-source'
 
 export type PostFilter = {
   search?: string
+  // Chỉ bài khách được xem: đã đăng, tới giờ đăng và thuộc danh mục đang hiện
+  visibleOnly?: boolean
+  categorySlug?: string
+  excludeId?: string
   categoryId?: string
   status?: PostStatus
   limit: number
@@ -32,13 +36,29 @@ class PostRepository {
     if (filter.search) this.applySearch(query, filter.search)
     if (filter.categoryId) query.andWhere('post.categoryId = :categoryId', { categoryId: filter.categoryId })
     if (filter.status) query.andWhere('post.status = :status', { status: filter.status })
+    if (filter.categorySlug) query.andWhere('category.slug = :categorySlug', { categorySlug: filter.categorySlug })
+    if (filter.excludeId) query.andWhere('post.id != :excludeId', { excludeId: filter.excludeId })
+    if (filter.visibleOnly) {
+      this.applyVisible(query)
+      // Trang tin tức: mới đăng lên trước
+      query.orderBy('post.publishedAt', 'DESC')
+    } else {
+      query.orderBy('post.updatedAt', 'DESC')
+    }
 
-    return query
-      .orderBy('post.updatedAt', 'DESC')
-      .addOrderBy('post.id', 'ASC')
-      .skip(filter.offset)
-      .take(filter.limit)
-      .getManyAndCount()
+    return query.addOrderBy('post.id', 'ASC').skip(filter.offset).take(filter.limit).getManyAndCount()
+  }
+
+  // US-23: Bài khách được xem theo slug
+  static findVisibleBySlug(slug: string) {
+    const query = this.baseQuery().where('post.slug = :slug', { slug })
+    this.applyVisible(query)
+    return query.getOne()
+  }
+
+  // Cộng lượt xem trong một câu UPDATE (nhiều người đọc cùng lúc không bị mất lượt)
+  static async incrementViews(id: string) {
+    await this.postRepo.increment({ id }, 'viewCount', 1)
   }
 
   static findById(id: string) {
@@ -97,6 +117,10 @@ class PostRepository {
         if (slugKeyword) where.orWhere('post.slug LIKE :slugKeyword', { slugKeyword: `%${slugKeyword}%` })
       })
     )
+  }
+
+  private static applyVisible(query: SelectQueryBuilder<Post>) {
+    query.andWhere("post.status = 'published' AND post.publishedAt <= now() AND category.isActive = true")
   }
 
   private static baseQuery(): SelectQueryBuilder<Post> {

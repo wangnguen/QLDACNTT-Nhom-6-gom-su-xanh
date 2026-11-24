@@ -1,8 +1,10 @@
+import { z } from 'zod/v4'
+
 import { registry } from '@docs/registry'
 
 import { idParamSchema } from '@common/validators'
 
-import { AdminPostQuerySchema, CreatePostBodySchema, UpdatePostBodySchema } from '@modules/post/dto'
+import { AdminPostQuerySchema, CreatePostBodySchema, PostQuerySchema, UpdatePostBodySchema } from '@modules/post/dto'
 
 import {
   PostDetailSchema,
@@ -115,5 +117,50 @@ registry.registerPath({
     ...adminErrors,
     404: notFoundResponse('Không tìm thấy bài viết'),
     422: validationErrorResponse('ID không hợp lệ')
+  }
+})
+
+// ─── US-23: Xem tin tức / blog ───────────────────────────────────────────────
+
+const TAG = 'Tin tức - Bài viết (US-23)'
+
+registry.registerPath({
+  method: 'get',
+  path: '/posts',
+  tags: [TAG],
+  summary: 'Danh sách bài viết',
+  description:
+    'Chỉ bài đã đăng thuộc danh mục đang hiện, mới đăng lên trước. Lọc theo `category` (slug danh mục) và `search` (tiêu đề, có dấu hoặc không dấu).',
+  request: { query: PostQuerySchema },
+  responses: {
+    200: {
+      description: 'Danh sách bài viết',
+      content: { 'application/json': { schema: paginatedWrapper(PostSummarySchema, '/posts') } }
+    },
+    422: validationErrorResponse()
+  }
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/posts/{slug}',
+  tags: [TAG],
+  summary: 'Đọc bài viết',
+  description:
+    'Kèm tối đa 3 bài cùng danh mục (`related`). Mỗi lần mở bài cộng một lượt xem. Bài nháp, bài thuộc danh mục đang ẩn trả 404.',
+  request: { params: z.object({ slug: z.string().meta({ example: 'phan-biet-men-lam-va-men-ran-bat-trang' }) }) },
+  responses: {
+    200: {
+      description: 'Bài viết',
+      content: {
+        'application/json': {
+          schema: successWrapper(
+            PostDetailSchema.extend({ related: z.array(PostSummarySchema) }),
+            '/posts/phan-biet-men-lam-va-men-ran-bat-trang'
+          )
+        }
+      }
+    },
+    404: notFoundResponse('Không tìm thấy bài viết')
   }
 })

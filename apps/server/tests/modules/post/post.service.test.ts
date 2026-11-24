@@ -15,6 +15,8 @@ vi.mock('@modules/post/post.repository', () => ({
   default: {
     findMany: vi.fn(),
     findById: vi.fn(),
+    findVisibleBySlug: vi.fn(),
+    incrementViews: vi.fn(),
     findSlugsWithBase: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
@@ -159,5 +161,49 @@ describe('PostService.listForAdmin', () => {
       author: { id: 'admin-1', fullName: 'Quản trị viên' },
       category: { slug: 'kien-thuc-gom' }
     })
+  })
+})
+
+describe('PostService.list (tin tức)', () => {
+  it('chỉ lấy bài khách được xem, lọc theo slug danh mục', async () => {
+    repo.findMany.mockResolvedValue([[makePost()], 1])
+
+    const result = await PostService.list({ limit: 9, offset: 0, category: 'kien-thuc-gom', search: 'men' })
+
+    expect(repo.findMany).toHaveBeenCalledWith({
+      limit: 9,
+      offset: 0,
+      search: 'men',
+      categorySlug: 'kien-thuc-gom',
+      visibleOnly: true
+    })
+    expect(result.entries[0]).toMatchObject({ slug: 'phan-biet-men-lam-va-men-ran', status: 'published' })
+  })
+})
+
+describe('PostService.getBySlug', () => {
+  it('trả bài kèm bài liên quan cùng danh mục và cộng lượt xem', async () => {
+    repo.findVisibleBySlug.mockResolvedValue(makePost({ viewCount: 9 }))
+    repo.findMany.mockResolvedValue([[makePost({ id: 'post-2', slug: 'men-ran' })], 1])
+
+    const result = await PostService.getBySlug('phan-biet-men-lam-va-men-ran')
+
+    expect(repo.incrementViews).toHaveBeenCalledWith('post-1')
+    expect(repo.findMany).toHaveBeenCalledWith({
+      visibleOnly: true,
+      categoryId: 'post-category-1',
+      excludeId: 'post-1',
+      limit: 3,
+      offset: 0
+    })
+    expect(result).toMatchObject({ viewCount: 10, content: expect.stringContaining('## Men rạn') })
+    expect(result.related.map((post) => post.slug)).toEqual(['men-ran'])
+  })
+
+  it('bài không xem được thì 404, không cộng lượt xem', async () => {
+    repo.findVisibleBySlug.mockResolvedValue(null)
+
+    await expect(PostService.getBySlug('ban-nhap')).rejects.toThrow(NotFoundError)
+    expect(repo.incrementViews).not.toHaveBeenCalled()
   })
 })

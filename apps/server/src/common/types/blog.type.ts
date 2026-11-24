@@ -36,3 +36,8 @@ export type PostDetail = PostSummary & {
   // Tóm tắt đúng như admin nhập (null = tự lấy từ nội dung) — dùng ở form sửa bài
   customExcerpt: string | null
 }
+
+// US-23: Bài viết ở trang tin tức kèm vài bài cùng danh mục
+export type PublicPostDetail = PostDetail & {
+  related: PostSummary[]
+}
