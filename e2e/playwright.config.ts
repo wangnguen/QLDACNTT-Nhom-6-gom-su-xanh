@@ -7,11 +7,11 @@ const isCI = !!process.env.CI
 // Client và admin chạy Vite dev server trên port riêng, proxy /api sang API server của E2E.
 // API server, Postgres và SMTP giả do global-setup khởi động.
 const viteServer = (filter: string, port: number, url: string) => ({
-  command: `pnpm --filter ${filter} exec vite --host 127.0.0.1 --port ${port} --strictPort`,
+  command: `pnpm --filter ${filter} exec vite --port ${port}`,
   cwd: ROOT_DIR,
   url,
-  env: { API_PROXY_TARGET: SERVER_URL, __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: 'gsx-assets.test' },
-  reuseExistingServer: false,
+  env: { API_PROXY_TARGET: SERVER_URL },
+  reuseExistingServer: !isCI,
   timeout: 120_000
 })
 
@@ -24,11 +24,9 @@ export default defineConfig({
   reporter: isCI ? [['github'], ['html', { open: 'never' }]] : [['list'], ['html', { open: 'never' }]],
   globalSetup: './support/global-setup.ts',
   use: {
-    launchOptions: { args: ['--host-resolver-rules=MAP gsx-assets.test 127.0.0.1'] },
     locale: 'vi-VN',
     trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure'
+    screenshot: 'only-on-failure'
   },
   // Tách bằng testDir, không dùng glob testMatch: glob khớp cả đường dẫn tuyệt đối (vd C:\Users\Admin\...)
   projects: [
