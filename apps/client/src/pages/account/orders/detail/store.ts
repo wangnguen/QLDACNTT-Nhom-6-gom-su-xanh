@@ -1,11 +1,13 @@
 import { create } from 'zustand'
 import { toast } from 'sonner'
-import { ordersService, ApiError, type OrderDetail } from '@lib/api'
+import { ordersService, paymentsService, ApiError, type OrderDetail, type Transaction } from '@lib/api'
 
 const errorMessage = (err: unknown, fallback: string) => (err instanceof ApiError ? err.message : fallback)
 
 interface OrderDetailState {
   order: OrderDetail | null
+  // US-17: Các lượt thanh toán / hoàn tiền của đơn
+  transactions: Transaction[]
   loading: boolean
   error: string
   paying: boolean
@@ -21,15 +23,25 @@ interface OrderDetailState {
 // US-15: Chi tiết đơn hàng
 export const useOrderDetailStore = create<OrderDetailState>((set) => ({
   order: null,
+  transactions: [],
   loading: false,
   error: '',
   paying: false,
   cancelling: false,
 
   fetch: async (id) => {
-    set((state) => ({ loading: true, error: '', order: state.order?.id === id ? state.order : null }))
+    set((state) => ({
+      loading: true,
+      error: '',
+      order: state.order?.id === id ? state.order : null,
+      transactions: state.order?.id === id ? state.transactions : []
+    }))
     try {
-      set({ order: await ordersService.get(id) })
+      const [order, transactions] = await Promise.all([
+        ordersService.get(id),
+        paymentsService.listMine({ orderId: id, limit: 50 }).catch(() => null)
+      ])
+      set({ order, transactions: transactions?.entries ?? [] })
     } catch (err) {
       set({ error: errorMessage(err, 'Không tải được đơn hàng') })
     } finally {
@@ -53,6 +65,11 @@ export const useOrderDetailStore = create<OrderDetailState>((set) => ({
     try {
       const updated = await ordersService.cancel(order.id, reason.trim() || null)
       set({ order: updated })
+      // Đơn đã thanh toán có thêm yêu cầu hoàn tiền
+      paymentsService
+        .listMine({ orderId: order.id, limit: 50 })
+        .then(({ entries }) => set({ transactions: entries }))
+        .catch(() => {})
       toast.success(
         updated.paymentStatus === 'refund_pending'
           ? `Đã huỷ đơn ${order.code}. Cửa hàng sẽ hoàn tiền cho bạn trong 3–5 ngày làm việc`

@@ -2,7 +2,13 @@ import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, CreditCard, LoaderCircle, MapPin, Phone, RotateCw, UserRound } from 'lucide-react'
 import { cn, formatDateTime, formatPrice } from '@lib/utils'
-import { ORDER_STATUS_LABEL, OrderTimeline, PAYMENT_METHOD_LABEL, PAYMENT_STATUS_LABEL } from '@components/order'
+import {
+  ORDER_STATUS_LABEL,
+  OrderTimeline,
+  PAYMENT_METHOD_LABEL,
+  PAYMENT_STATUS_LABEL,
+  TransactionItem
+} from '@components/order'
 import { ProductImage } from '@components/product'
 import { ErrorBanner } from '@pages/auth/components'
 import { CancelOrder } from './components/CancelOrder'
@@ -13,7 +19,7 @@ const card = 'rounded-2xl border border-clay/60 p-5'
 // US-15: Chi tiết đơn hàng — sản phẩm, tiền, người nhận, thanh toán và tiến trình đơn
 export default function OrderDetailPage() {
   const { id = '' } = useParams()
-  const { order, loading, error, paying, cancelling, fetch, pay, cancel } = useOrderDetailStore()
+  const { order, transactions, loading, error, paying, cancelling, fetch, pay, cancel } = useOrderDetailStore()
 
   useEffect(() => {
     fetch(id)
@@ -168,6 +174,17 @@ export default function OrderDetailPage() {
               {order.paidAt && <p className='mt-1 text-xs text-muted'>Lúc {formatDateTime(order.paidAt)}</p>}
             </section>
           </div>
+
+          {transactions.length > 0 && (
+            <section className={card} aria-label='Giao dịch của đơn'>
+              <h3 className='text-sm font-bold tracking-wider text-muted uppercase'>Giao dịch</h3>
+              <ul className='divide-y divide-clay/50'>
+                {transactions.map((transaction) => (
+                  <TransactionItem key={transaction.id} transaction={transaction} showOrder={false} />
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
 
         <section className={card} aria-label='Tiến trình đơn hàng'>

@@ -344,3 +344,11 @@ export interface MyOrderQuery {
   offset?: number
   status?: OrderStatus
 }
+
+export interface MyTransactionQuery {
+  limit?: number
+  offset?: number
+  type?: TransactionType
+  status?: TransactionStatus
+  orderId?: string
+}

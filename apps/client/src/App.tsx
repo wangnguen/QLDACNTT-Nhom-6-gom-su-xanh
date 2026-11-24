@@ -21,6 +21,7 @@ import ChangePasswordPage from './pages/account/change-password'
 import MyWorkshopsPage from './pages/account/workshops'
 import MyOrdersPage from './pages/account/orders'
 import OrderDetailPage from './pages/account/orders/detail'
+import TransactionsPage from './pages/account/transactions'
 
 import HomePage from './pages/home'
 import ProductsPage from './pages/products'
@@ -185,6 +186,8 @@ function App() {
           {/* US-15 — đơn hàng của tôi */}
           <Route path='orders' element={<MyOrdersPage />} />
           <Route path='orders/:id' element={<OrderDetailPage />} />
+          {/* US-17 — lịch sử giao dịch */}
+          <Route path='transactions' element={<TransactionsPage />} />
           {/* US-13 — lịch workshop của tôi */}
           <Route path='workshops' element={<MyWorkshopsPage />} />
         </Route>
