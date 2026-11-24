@@ -389,3 +389,23 @@ export const AdminOrderDetailSchema = registry.register(
   'AdminOrderDetail',
   AdminOrderSchema.extend({ transactions: z.array(TransactionSchema) })
 )
+
+// ─── Tin tức / blog ──────────────────────────────────────────────────────────
+
+export const PostCategoryRefSchema = registry.register(
+  'PostCategoryRef',
+  z.object({
+    id: z.string().uuid().meta({ example: 'd4e5f6a7-b8c9-4d0e-8f1a-2b3c4d5e6f70' }),
+    name: z.string().meta({ example: 'Kiến thức gốm' }),
+    slug: z.string().meta({ example: 'kien-thuc-gom' })
+  })
+)
+
+export const PostCategoryItemSchema = registry.register(
+  'PostCategoryItem',
+  PostCategoryRefSchema.extend({
+    description: z.string().nullable().meta({ example: 'Cách nhận biết men, cách dùng và bảo quản đồ gốm' }),
+    isActive: z.boolean().meta({ example: true }),
+    postCount: z.number().int().meta({ example: 6 })
+  })
+)

@@ -6,6 +6,7 @@ import type { Category } from '@entities/category.entity'
 import type { OrderItem } from '@entities/order-item.entity'
 import type { Order } from '@entities/order.entity'
 import type { PaymentTransaction } from '@entities/payment-transaction.entity'
+import type { PostCategory } from '@entities/post-category.entity'
 import type { Product } from '@entities/product.entity'
 import type { RefreshToken } from '@entities/refresh-token.entity'
 import type { User } from '@entities/user.entity'
@@ -220,3 +221,16 @@ export const makeTransaction = (overrides: Partial<PaymentTransaction> = {}): Pa
     deletedAt: null,
     ...overrides
   }) as PaymentTransaction
+
+export const makePostCategory = (overrides: Partial<PostCategory> = {}): PostCategory =>
+  ({
+    id: 'post-category-1',
+    name: 'Kiến thức gốm',
+    slug: 'kien-thuc-gom',
+    description: null,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+    ...overrides
+  }) as PostCategory
