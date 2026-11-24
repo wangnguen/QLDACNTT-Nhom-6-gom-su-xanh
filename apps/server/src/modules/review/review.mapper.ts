@@ -1,5 +1,5 @@
 import { MAX_RATING, MIN_RATING } from '@common/constants'
-import { RatingSummary, ReviewItem } from '@common/types'
+import { AdminReviewItem, RatingSummary, ReviewItem } from '@common/types'
 
 import { ProductReview } from '@entities/product-review.entity'
 
@@ -25,3 +25,17 @@ export const toRatingSummary = (counts: Map<number, number>): RatingSummary => {
   const total = Object.entries(distribution).reduce((sum, [star, n]) => sum + Number(star) * n, 0)
   return { average: count ? Math.round((total / count) * 10) / 10 : 0, count, distribution }
 }
+
+// `review.user`, `review.product` phải được load kèm; `review.order` nếu có
+export const toAdminReviewItem = (review: ProductReview): AdminReviewItem => ({
+  ...toReviewItem(review),
+  isHidden: review.isHidden,
+  product: {
+    id: review.product.id,
+    name: review.product.name,
+    slug: review.product.slug,
+    imageUrl: review.product.imageUrls[0] ?? null
+  },
+  customer: { id: review.user.id, fullName: review.user.fullName, email: review.user.email },
+  orderCode: review.order?.code ?? null
+})

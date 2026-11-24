@@ -1,3 +1,5 @@
+import { Brackets } from 'typeorm'
+
 import { ORDER_STATUS } from '@common/constants'
 
 import { Order } from '@entities/order.entity'
@@ -10,9 +12,15 @@ export type ReviewFilter = {
   rating?: number
   // Chỉ đánh giá đang hiện (trang client)
   visibleOnly?: boolean
+  // Trang admin: lọc đang hiện / đã ẩn, tìm kiếm và load kèm sản phẩm, đơn hàng
+  isHidden?: boolean
+  search?: string
+  withDetails?: boolean
   limit: number
   offset: number
 }
+
+const escapeLike = (value: string) => value.replace(/[\\%_]/g, (char) => `\\${char}`)
 
 type ReviewData = Partial<Pick<ProductReview, 'rating' | 'comment' | 'isHidden' | 'adminReply' | 'repliedAt'>>
 
@@ -24,6 +32,23 @@ class ReviewRepository {
     if (filter.productId) query.andWhere('review.productId = :productId', { productId: filter.productId })
     if (filter.rating) query.andWhere('review.rating = :rating', { rating: filter.rating })
     if (filter.visibleOnly) query.andWhere('review.isHidden = false')
+    if (filter.isHidden !== undefined) query.andWhere('review.isHidden = :isHidden', { isHidden: filter.isHidden })
+
+    if (filter.withDetails || filter.search) {
+      query.innerJoinAndSelect('review.product', 'product').leftJoinAndSelect('review.order', 'order')
+    }
+    if (filter.search) {
+      const keyword = `%${escapeLike(filter.search)}%`
+      query.andWhere(
+        new Brackets((where) =>
+          where
+            .where('review.comment ILIKE :keyword', { keyword })
+            .orWhere('product.name ILIKE :keyword')
+            .orWhere('user.fullName ILIKE :keyword')
+            .orWhere('user.email ILIKE :keyword')
+        )
+      )
+    }
 
     return query
       .orderBy('review.createdAt', 'DESC')
@@ -48,6 +73,14 @@ class ReviewRepository {
 
   static findById(id: string) {
     return this.reviewRepo.findOne({ where: { id }, relations: { user: true } })
+  }
+
+  static findByIdWithDetails(id: string) {
+    return this.reviewRepo.findOne({ where: { id }, relations: { user: true, product: true, order: true } })
+  }
+
+  static softDelete(id: string) {
+    return this.reviewRepo.softDelete(id)
   }
 
   static findByProductAndUser(productId: string, userId: string) {
