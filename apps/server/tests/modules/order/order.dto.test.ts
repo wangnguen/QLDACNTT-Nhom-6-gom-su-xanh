@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { CreateOrderBodySchema } from '@modules/order/dto'
+import { CreateOrderBodySchema, MyOrderQuerySchema } from '@modules/order/dto'
 
 const validBody = {
   recipientName: ' Nguyễn Văn An ',
@@ -34,5 +34,15 @@ describe('CreateOrderBodySchema', () => {
     ['ghi chú quá 500 ký tự', { note: 'a'.repeat(501) }]
   ])('từ chối khi %s', (_case, override) => {
     expect(CreateOrderBodySchema.safeParse({ ...validBody, ...override }).success).toBe(false)
+  })
+})
+
+describe('MyOrderQuerySchema', () => {
+  it('mặc định trang đầu, lọc theo trạng thái', () => {
+    expect(MyOrderQuerySchema.parse({ status: 'shipping' })).toEqual({ limit: 12, offset: 0, status: 'shipping' })
+  })
+
+  it('từ chối trạng thái lạ', () => {
+    expect(MyOrderQuerySchema.safeParse({ status: 'done' }).success).toBe(false)
   })
 })

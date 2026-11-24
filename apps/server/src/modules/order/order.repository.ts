@@ -1,5 +1,7 @@
 import { In } from 'typeorm'
 
+import { OrderStatus } from '@common/constants'
+
 import { CartItem } from '@entities/cart-item.entity'
 import { OrderItem } from '@entities/order-item.entity'
 import { Order } from '@entities/order.entity'
@@ -39,6 +41,13 @@ export type NewOrderItemData = Pick<
 export type NewTransactionData = Pick<PaymentTransaction, 'code' | 'userId' | 'method' | 'amount' | 'expiresAt'> &
   Partial<Pick<PaymentTransaction, 'type' | 'note'>>
 
+export type OrderFilter = {
+  userId?: string
+  status?: OrderStatus
+  limit: number
+  offset: number
+}
+
 export type CheckoutPlan = {
   order: NewOrderData
   items: NewOrderItemData[]
@@ -49,6 +58,21 @@ export type CheckoutPlan = {
 class OrderRepository {
   static findById(id: string) {
     return this.orderRepo.findOne({ where: { id }, relations: { items: true } })
+  }
+
+  // Mới đặt lên trước
+  static findMany(filter: OrderFilter): Promise<[Order[], number]> {
+    const query = this.orderRepo.createQueryBuilder('order').leftJoinAndSelect('order.items', 'item')
+
+    if (filter.userId) query.andWhere('order.userId = :userId', { userId: filter.userId })
+    if (filter.status) query.andWhere('order.status = :status', { status: filter.status })
+
+    return query
+      .orderBy('order.createdAt', 'DESC')
+      .addOrderBy('order.id', 'ASC')
+      .skip(filter.offset)
+      .take(filter.limit)
+      .getManyAndCount()
   }
 
   /**

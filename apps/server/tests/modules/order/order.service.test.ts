@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { BadRequestError } from '@common/errors'
+import { BadRequestError, NotFoundError } from '@common/errors'
 
 import OrderRepository, { CheckoutLine, CheckoutPlan } from '@modules/order/order.repository'
 import OrderService, { calculateShippingFee } from '@modules/order/order.service'
@@ -13,7 +13,8 @@ import { makeOrder, makeOrderItem, makeProduct, makeTransaction } from '../../he
 vi.mock('@modules/order/order.repository', () => ({
   default: {
     createFromCart: vi.fn(),
-    findById: vi.fn()
+    findById: vi.fn(),
+    findMany: vi.fn()
   }
 }))
 
@@ -143,5 +144,44 @@ describe('OrderService.checkout', () => {
 
     await expect(OrderService.checkout('user-1', body, '127.0.0.1')).rejects.toThrow(BadRequestError)
     await expect(OrderService.checkout('user-1', body, '127.0.0.1')).rejects.toThrow(message)
+  })
+})
+
+describe('OrderService.listMine', () => {
+  it('chỉ lấy đơn của chính mình', async () => {
+    repo.findMany.mockResolvedValue([[makeOrder(), makeOrder({ id: 'order-2', status: 'cancelled' })], 2])
+
+    const result = await OrderService.listMine('user-1', { limit: 10, offset: 0, status: undefined })
+
+    expect(repo.findMany).toHaveBeenCalledWith({ limit: 10, offset: 0, status: undefined, userId: 'user-1' })
+    expect(result).toMatchObject({ limit: 10, offset: 0, total_count: 2 })
+    expect(result.entries.map((order) => order.id)).toEqual(['order-1', 'order-2'])
+  })
+})
+
+describe('OrderService.getMine', () => {
+  it('trả chi tiết đơn kèm sản phẩm', async () => {
+    repo.findById.mockResolvedValue(
+      makeOrder({
+        items: [
+          makeOrderItem({ id: 'i-2', productName: 'Ấm trà', quantity: 1, unitPrice: 300000, lineTotal: 300000 }),
+          makeOrderItem({ id: 'i-1', productName: 'Bình hoa', quantity: 2 })
+        ]
+      })
+    )
+
+    const result = await OrderService.getMine('user-1', 'order-1')
+
+    expect(result).toMatchObject({ code: 'DH7K3M9Q', itemCount: 3, recipientName: 'Nguyễn Văn An' })
+    expect(result.items.map((item) => item.productName)).toEqual(['Ấm trà', 'Bình hoa'])
+  })
+
+  it.each([
+    ['đơn không tồn tại', null],
+    ['đơn của người khác', makeOrder({ userId: 'user-2' })]
+  ])('báo không tìm thấy khi %s', async (_case, order) => {
+    repo.findById.mockResolvedValue(order)
+
+    await expect(OrderService.getMine('user-1', 'order-1')).rejects.toThrow(NotFoundError)
   })
 })

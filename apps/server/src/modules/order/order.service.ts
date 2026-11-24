@@ -1,11 +1,11 @@
-import { FREE_SHIPPING_THRESHOLD, PAYMENT_METHOD, SHIPPING_FEE } from '@common/constants'
-import { BadRequestError } from '@common/errors'
-import { CheckoutResult } from '@common/types'
+import { FREE_SHIPPING_THRESHOLD, ORDER_NOT_FOUND_MESSAGE, PAYMENT_METHOD, SHIPPING_FEE } from '@common/constants'
+import { BadRequestError, NotFoundError } from '@common/errors'
+import { CheckoutResult, OrderDetail, Paginated } from '@common/types'
 import { generateCode } from '@common/utils/random'
 
 import PaymentService from '@modules/payment/payment.service'
 
-import { CreateOrderBody } from './dto'
+import { CreateOrderBody, MyOrderQuery } from './dto'
 import { toOrderDetail } from './order.mapper'
 import OrderRepository, { CheckoutLine, CheckoutPlan, NewOrderItemData } from './order.repository'
 
@@ -38,6 +38,23 @@ class OrderService {
       order: toOrderDetail(order),
       paymentUrl: transaction ? PaymentService.buildPaymentUrl(transaction, order, ipAddr) : null
     }
+  }
+
+  // US-15: Đơn hàng của tôi — mới đặt lên trước
+  static async listMine(userId: string, query: MyOrderQuery): Promise<Paginated<OrderDetail>> {
+    const [orders, total] = await OrderRepository.findMany({ ...query, userId })
+    return { limit: query.limit, offset: query.offset, total_count: total, entries: orders.map(toOrderDetail) }
+  }
+
+  // US-15: Chi tiết đơn hàng — đơn của người khác báo không tìm thấy để không lộ thông tin
+  static async getMine(userId: string, id: string): Promise<OrderDetail> {
+    return toOrderDetail(await this.findOwnOrThrow(userId, id))
+  }
+
+  static async findOwnOrThrow(userId: string, id: string) {
+    const order = await OrderRepository.findById(id)
+    if (!order || order.userId !== userId) throw new NotFoundError(ORDER_NOT_FOUND_MESSAGE)
+    return order
   }
 
   // Kiểm tra giỏ hàng (đang giữ khoá) và tính tiền — ném lỗi nếu không đặt được

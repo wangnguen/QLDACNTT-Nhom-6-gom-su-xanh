@@ -4,13 +4,14 @@ import { registry } from '@docs/registry'
 
 import { idParamSchema } from '@common/validators'
 
-import { CreateOrderBodySchema } from '@modules/order/dto'
+import { CreateOrderBodySchema, MyOrderQuerySchema } from '@modules/order/dto'
 
 import {
   OrderDetailSchema,
   badRequestResponse,
   jsonBody,
   notFoundResponse,
+  paginatedWrapper,
   successWrapper,
   unauthorizedResponse,
   validationErrorResponse
@@ -91,6 +92,48 @@ registry.registerPath({
       }
     },
     400: badRequestResponse('Đơn hàng đã được thanh toán / không thanh toán trực tuyến được'),
+    401: unauthorized,
+    404: notFoundResponse('Không tìm thấy đơn hàng'),
+    422: validationErrorResponse('ID không hợp lệ')
+  }
+})
+
+// ─── US-15: Xem đơn hàng ─────────────────────────────────────────────────────
+
+const MY_TAG = 'Đơn hàng - Của tôi (US-15)'
+
+registry.registerPath({
+  method: 'get',
+  path: '/orders',
+  tags: [MY_TAG],
+  summary: 'Đơn hàng của tôi',
+  description: 'Các đơn của tài khoản đang đăng nhập, mới đặt lên trước. Lọc theo `status`.',
+  security: [{ bearerAuth: [] }],
+  request: { query: MyOrderQuerySchema },
+  responses: {
+    200: {
+      description: 'Danh sách đơn hàng',
+      content: { 'application/json': { schema: paginatedWrapper(OrderDetailSchema, '/orders') } }
+    },
+    401: unauthorized,
+    422: validationErrorResponse()
+  }
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/orders/{id}',
+  tags: [MY_TAG],
+  summary: 'Chi tiết đơn hàng',
+  description:
+    'Sản phẩm, tiền, người nhận, trạng thái thanh toán và các mốc thời gian của đơn. Đơn của người khác trả 404.',
+  security: [{ bearerAuth: [] }],
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: 'Chi tiết đơn hàng',
+      content: { 'application/json': { schema: successWrapper(OrderDetailSchema, '/orders/{id}') } }
+    },
     401: unauthorized,
     404: notFoundResponse('Không tìm thấy đơn hàng'),
     422: validationErrorResponse('ID không hợp lệ')
