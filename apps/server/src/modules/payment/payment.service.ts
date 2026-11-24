@@ -11,7 +11,7 @@ import {
 import { BadRequestError, NotFoundError } from '@common/errors'
 import { VnpayService } from '@common/services'
 import { VnpayResult } from '@common/services/vnpay.service'
-import { PaymentMethodOption, PaymentResult } from '@common/types'
+import { Paginated, PaymentMethodOption, PaymentResult, TransactionItem } from '@common/types'
 import { generateCode } from '@common/utils/random'
 
 import { canPayOnline, toOrderDetail } from '@modules/order/order.mapper'
@@ -20,6 +20,7 @@ import OrderRepository, { NewTransactionData } from '@modules/order/order.reposi
 import { Order } from '@entities/order.entity'
 import { PaymentTransaction } from '@entities/payment-transaction.entity'
 
+import { MyTransactionQuery } from './dto'
 import { toTransactionItem } from './payment.mapper'
 import PaymentRepository, { OrderPaymentChange, TransactionResultChange } from './payment.repository'
 
@@ -94,6 +95,17 @@ class PaymentService {
 
     const transaction = await PaymentRepository.createPayment(order.id, this.newOnlinePayment(userId, order.total))
     return { paymentUrl: this.buildPaymentUrl(transaction, order, ipAddr) }
+  }
+
+  // US-17: Lịch sử giao dịch của tôi — thanh toán và hoàn tiền, mới nhất lên trước
+  static async listMine(userId: string, query: MyTransactionQuery): Promise<Paginated<TransactionItem>> {
+    const [transactions, total] = await PaymentRepository.findMany({ ...query, userId })
+    return {
+      limit: query.limit,
+      offset: query.offset,
+      total_count: total,
+      entries: transactions.map((t) => toTransactionItem(t))
+    }
   }
 
   // US-14: Trang kết quả thanh toán — trình duyệt của khách quay về từ cổng thanh toán

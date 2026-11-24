@@ -1,4 +1,10 @@
-import { TRANSACTION_STATUS, TRANSACTION_TYPE } from '@common/constants'
+import {
+  PaymentMethod,
+  TRANSACTION_STATUS,
+  TRANSACTION_TYPE,
+  TransactionStatus,
+  TransactionType
+} from '@common/constants'
 
 import { NewTransactionData } from '@modules/order/order.repository'
 
@@ -11,6 +17,16 @@ export type TransactionResultChange = Pick<
   PaymentTransaction,
   'status' | 'gatewayTransactionNo' | 'bankCode' | 'responseCode' | 'completedAt' | 'note'
 >
+
+export type TransactionFilter = {
+  userId?: string
+  orderId?: string
+  type?: TransactionType
+  status?: TransactionStatus
+  method?: PaymentMethod
+  limit: number
+  offset: number
+}
 
 export type OrderPaymentChange = {
   change: Partial<Pick<Order, 'paymentStatus' | 'paidAt'>>
@@ -25,6 +41,26 @@ class PaymentRepository {
 
   static findById(id: string) {
     return this.transactionRepo.findOne({ where: { id }, relations: { order: { items: true } } })
+  }
+
+  // Mới tạo lên trước
+  static findMany(filter: TransactionFilter): Promise<[PaymentTransaction[], number]> {
+    const query = this.transactionRepo
+      .createQueryBuilder('transaction')
+      .innerJoinAndSelect('transaction.order', 'order')
+
+    if (filter.userId) query.andWhere('transaction.userId = :userId', { userId: filter.userId })
+    if (filter.orderId) query.andWhere('transaction.orderId = :orderId', { orderId: filter.orderId })
+    if (filter.type) query.andWhere('transaction.type = :type', { type: filter.type })
+    if (filter.status) query.andWhere('transaction.status = :status', { status: filter.status })
+    if (filter.method) query.andWhere('transaction.method = :method', { method: filter.method })
+
+    return query
+      .orderBy('transaction.createdAt', 'DESC')
+      .addOrderBy('transaction.id', 'ASC')
+      .skip(filter.offset)
+      .take(filter.limit)
+      .getManyAndCount()
   }
 
   // Lượt thanh toán mới thay cho các lượt cũ còn dang dở của đơn (link cũ không dùng nữa)

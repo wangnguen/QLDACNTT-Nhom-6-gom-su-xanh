@@ -7,11 +7,15 @@ import { toOrderRef } from '@modules/order/order.mapper'
 import { PaymentTransaction } from '@entities/payment-transaction.entity'
 
 // Diễn giải trạng thái giao dịch cho khách và cửa hàng
-const describe = (transaction: PaymentTransaction): string => {
+const describe = (transaction: PaymentTransaction, now: Date): string => {
   const isRefund = transaction.type === TRANSACTION_TYPE.REFUND
   switch (transaction.status) {
     case TRANSACTION_STATUS.PENDING:
-      return isRefund ? 'Chờ cửa hàng hoàn tiền' : 'Đang chờ thanh toán'
+      if (isRefund) return 'Chờ cửa hàng hoàn tiền'
+      // Khách bỏ dở ở cổng thanh toán, link đã hết hạn
+      return transaction.expiresAt && transaction.expiresAt.getTime() < now.getTime()
+        ? 'Đã hết hạn thanh toán'
+        : 'Đang chờ thanh toán'
     case TRANSACTION_STATUS.SUCCESS:
       if (isRefund) return 'Đã hoàn tiền'
       return transaction.method === PAYMENT_METHOD.COD ? 'Đã thu tiền khi giao hàng' : 'Thanh toán thành công'
@@ -21,7 +25,7 @@ const describe = (transaction: PaymentTransaction): string => {
 }
 
 // `transaction.order` phải được load kèm
-export const toTransactionItem = (transaction: PaymentTransaction): TransactionItem => ({
+export const toTransactionItem = (transaction: PaymentTransaction, now = new Date()): TransactionItem => ({
   id: transaction.id,
   code: transaction.code,
   type: transaction.type,
@@ -31,7 +35,7 @@ export const toTransactionItem = (transaction: PaymentTransaction): TransactionI
   gatewayTransactionNo: transaction.gatewayTransactionNo,
   bankCode: transaction.bankCode,
   responseCode: transaction.responseCode,
-  message: describe(transaction),
+  message: describe(transaction, now),
   note: transaction.note,
   createdAt: transaction.createdAt,
   completedAt: transaction.completedAt,

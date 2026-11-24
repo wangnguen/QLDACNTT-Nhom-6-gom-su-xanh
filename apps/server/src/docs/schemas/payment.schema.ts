@@ -4,7 +4,18 @@ import { registry } from '@docs/registry'
 
 import { PAYMENT_METHOD } from '@common/constants'
 
-import { OrderDetailSchema, TransactionSchema, badRequestResponse, notFoundResponse, successWrapper } from './shared'
+import { MyTransactionQuerySchema } from '@modules/payment/dto'
+
+import {
+  OrderDetailSchema,
+  TransactionSchema,
+  badRequestResponse,
+  notFoundResponse,
+  paginatedWrapper,
+  successWrapper,
+  unauthorizedResponse,
+  validationErrorResponse
+} from './shared'
 
 // ─── US-14: Thanh toán trực tuyến ────────────────────────────────────────────
 
@@ -92,5 +103,30 @@ registry.registerPath({
         }
       }
     }
+  }
+})
+
+// ─── US-17: Lịch sử giao dịch ────────────────────────────────────────────────
+
+registry.registerPath({
+  method: 'get',
+  path: '/payments',
+  tags: ['Thanh toán - Lịch sử giao dịch (US-17)'],
+  summary: 'Lịch sử giao dịch của tôi',
+  description: `Các lượt thanh toán và hoàn tiền của tài khoản đang đăng nhập, mới nhất lên trước.
+
+- \`type\`: \`payment\` (thanh toán) hoặc \`refund\` (hoàn tiền)
+- \`status\`: \`pending\`, \`success\`, \`failed\`
+- \`orderId\`: các giao dịch của một đơn
+- \`message\` diễn giải kết quả, vd "Khách hàng huỷ giao dịch", "Đã hết hạn thanh toán", "Chờ cửa hàng hoàn tiền"`,
+  security: [{ bearerAuth: [] }],
+  request: { query: MyTransactionQuerySchema },
+  responses: {
+    200: {
+      description: 'Danh sách giao dịch',
+      content: { 'application/json': { schema: paginatedWrapper(TransactionSchema, '/payments') } }
+    },
+    401: unauthorizedResponse('Chưa đăng nhập hoặc access token hết hạn'),
+    422: validationErrorResponse()
   }
 })

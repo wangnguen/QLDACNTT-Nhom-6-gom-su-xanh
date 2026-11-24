@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 
 import { VnpayService } from '@common/services'
 
+import { MyTransactionQuerySchema } from './dto'
 import { renderSandboxPage } from './payment.sandbox'
 import PaymentService from './payment.service'
 
@@ -12,6 +13,12 @@ class PaymentController {
   // US-14: Phương thức thanh toán đang nhận
   static methods(_req: Request, res: Response) {
     return res.ok(PaymentService.getMethods())
+  }
+
+  // US-17: Lịch sử giao dịch của tôi (query đã qua validateQuery ở route)
+  static async listMine(req: Request, res: Response) {
+    const transactions = await PaymentService.listMine(req.user!.id, MyTransactionQuerySchema.parse(req.query))
+    return res.ok(transactions)
   }
 
   // US-14: Trang kết quả thanh toán gửi lại query VNPay trả về để server kiểm tra chữ ký và ghi nhận

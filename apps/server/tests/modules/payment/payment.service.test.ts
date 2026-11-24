@@ -22,6 +22,7 @@ vi.mock('@modules/payment/payment.repository', () => ({
   default: {
     findByCode: vi.fn(),
     findById: vi.fn(),
+    findMany: vi.fn(),
     createPayment: vi.fn(),
     applyGatewayResult: vi.fn()
   }
@@ -196,5 +197,33 @@ describe('PaymentService.retry', () => {
 
     await expect(PaymentService.retry('user-1', 'order-1', '127.0.0.1')).rejects.toThrow(error)
     expect(repo.createPayment).not.toHaveBeenCalled()
+  })
+})
+
+describe('PaymentService.listMine', () => {
+  it('chỉ lấy giao dịch của chính mình, kèm diễn giải kết quả', async () => {
+    repo.findMany.mockResolvedValue([
+      [
+        makeTransaction({ status: 'success' }),
+        makeTransaction({ id: 't-2', status: 'failed', responseCode: '24' }),
+        makeTransaction({ id: 't-3', expiresAt: new Date(Date.now() - 60_000) }),
+        makeTransaction({ id: 't-4', type: 'refund', expiresAt: null }),
+        makeTransaction({ id: 't-5', type: 'refund', status: 'success' })
+      ],
+      5
+    ])
+
+    const result = await PaymentService.listMine('user-1', { limit: 10, offset: 0, type: undefined })
+
+    expect(repo.findMany).toHaveBeenCalledWith({ limit: 10, offset: 0, type: undefined, userId: 'user-1' })
+    expect(result.total_count).toBe(5)
+    expect(result.entries.map((t) => t.message)).toEqual([
+      'Thanh toán thành công',
+      'Khách hàng huỷ giao dịch',
+      'Đã hết hạn thanh toán',
+      'Chờ cửa hàng hoàn tiền',
+      'Đã hoàn tiền'
+    ])
+    expect(result.entries[0].order).toEqual({ id: 'order-1', code: 'DH7K3M9Q', status: 'pending', total: 930000 })
   })
 })
