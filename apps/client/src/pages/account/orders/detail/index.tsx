@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, CreditCard, LoaderCircle, MapPin, Phone, RotateCw, UserRound } from 'lucide-react'
+import { ArrowLeft, CreditCard, LoaderCircle, MapPin, Phone, RotateCw, Truck, UserRound } from 'lucide-react'
 import { cn, formatDateTime, formatPrice } from '@lib/utils'
 import {
   ORDER_STATUS_LABEL,
   OrderTimeline,
   PAYMENT_METHOD_LABEL,
   PAYMENT_STATUS_LABEL,
+  SHIPPING_CARRIER_LABEL,
   TransactionItem
 } from '@components/order'
 import { ProductImage } from '@components/product'
@@ -85,6 +86,39 @@ export default function OrderDetailPage() {
             {paying ? <LoaderCircle size={18} className='animate-spin' /> : <CreditCard size={18} />}
             Thanh toán {formatPrice(order.total)}
           </button>
+        </div>
+      )}
+
+      {/* US-19: Thông tin vận chuyển */}
+      {order.shippingCarrier && (
+        <div className='mb-5 flex gap-3 rounded-2xl border border-teal/30 bg-teal/5 p-4'>
+          <Truck size={22} className='mt-0.5 shrink-0 text-teal' aria-hidden />
+          <div className='text-sm text-ink'>
+            <p>
+              {order.status === 'shipping'
+                ? 'Đơn đang được giao bởi '
+                : order.status === 'delivered'
+                  ? 'Đơn đã được giao bởi '
+                  : 'Đơn được giao bởi '}
+              <span className='font-semibold text-forest'>{SHIPPING_CARRIER_LABEL[order.shippingCarrier]}</span>
+              {order.trackingCode && (
+                <>
+                  {' '}
+                  — mã vận đơn <span className='font-mono font-bold text-teal'>{order.trackingCode}</span>
+                </>
+              )}
+              .
+            </p>
+            {order.status === 'shipping' && order.paymentMethod === 'cod' && order.paymentStatus === 'unpaid' && (
+              <p className='mt-1'>Vui lòng chuẩn bị {formatPrice(order.total)} khi nhận hàng.</p>
+            )}
+            {order.status === 'returned' && order.deliveryNote && (
+              <p className='mt-1 text-danger'>
+                Giao không thành công: {order.deliveryNote}
+                {order.paymentStatus === 'refund_pending' && '. Cửa hàng sẽ hoàn tiền cho bạn trong 3–5 ngày làm việc.'}
+              </p>
+            )}
+          </div>
         </div>
       )}
 

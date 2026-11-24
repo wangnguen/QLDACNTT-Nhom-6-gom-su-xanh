@@ -40,7 +40,8 @@ export type {
   AdminOrder,
   Transaction,
   AdminOrderDetail,
-  AdminOrderQuery
+  AdminOrderQuery,
+  ShipmentBody
 } from './types'
 
 export { authService } from './services/auth.service'

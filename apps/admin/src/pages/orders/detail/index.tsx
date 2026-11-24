@@ -6,6 +6,7 @@ import { cn, formatDateTime, formatPrice } from '@lib/utils'
 import { Thumbnail } from '@components/ui'
 import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_STATUS, TRANSACTION_STATUS, statusBadge } from '@components/order'
 import { CancelOrderDialog } from '../components/CancelOrderDialog'
+import { ShipmentPanel } from './components/ShipmentPanel'
 import { useOrderDetailStore } from './store'
 
 const card = 'rounded-[var(--radius-organic)] border border-clay/70 bg-cream p-5 shadow-sm sm:p-6'
@@ -261,6 +262,12 @@ export default function OrderDetailPage() {
             </ul>
             {order.note && <p className='mt-3 rounded-xl bg-sand/70 p-3 text-sm text-ink italic'>“{order.note}”</p>}
           </Section>
+
+          {order.status !== 'cancelled' && (
+            <Section title='Vận chuyển'>
+              <ShipmentPanel order={order} />
+            </Section>
+          )}
 
           <Section title='Thanh toán'>
             <p className='text-sm font-semibold'>

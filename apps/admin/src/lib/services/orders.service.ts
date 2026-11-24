@@ -1,5 +1,13 @@
 import { http } from '../axios'
-import type { AdminOrder, AdminOrderDetail, AdminOrderQuery, OrderAction, OrderStatus, Paginated } from '../types'
+import type {
+  AdminOrder,
+  AdminOrderDetail,
+  AdminOrderQuery,
+  OrderAction,
+  OrderStatus,
+  Paginated,
+  ShipmentBody
+} from '../types'
 
 // US-18: Quản lý đơn hàng
 export async function list(query: AdminOrderQuery): Promise<Paginated<AdminOrder>> {
@@ -28,9 +36,16 @@ export async function updateStatus(
   return data
 }
 
+// US-19: Giao cho đơn vị vận chuyển / sửa mã vận đơn / giao thành công / hoàn hàng
+export async function updateShipment(id: string, body: ShipmentBody): Promise<AdminOrderDetail> {
+  const { data } = await http.patch<AdminOrderDetail>(`/admin/orders/${id}/shipment`, body)
+  return data
+}
+
 export const ordersService = {
   list,
   statusCounts,
   get,
-  updateStatus
+  updateStatus,
+  updateShipment
 }

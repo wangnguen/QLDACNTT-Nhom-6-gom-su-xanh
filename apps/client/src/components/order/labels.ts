@@ -1,4 +1,4 @@
-import type { OrderStatus, PaymentMethod, PaymentStatus } from '@lib/api'
+import type { OrderStatus, PaymentMethod, PaymentStatus, ShippingCarrier } from '@lib/api'
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, { text: string; className: string }> = {
   pending: { text: 'Chờ xác nhận', className: 'bg-warning/10 text-warning' },
@@ -19,4 +19,13 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, { text: string; classNa
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   cod: 'Thanh toán khi nhận hàng (COD)',
   vnpay: 'Thanh toán trực tuyến qua VNPay'
+}
+
+export const SHIPPING_CARRIER_LABEL: Record<ShippingCarrier, string> = {
+  ghn: 'Giao Hàng Nhanh (GHN)',
+  ghtk: 'Giao Hàng Tiết Kiệm (GHTK)',
+  viettel_post: 'Viettel Post',
+  vnpost: 'VNPost',
+  jt: 'J&T Express',
+  shop: 'Cửa hàng tự giao'
 }

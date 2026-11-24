@@ -1,4 +1,4 @@
-import type { OrderStatus, PaymentMethod, PaymentStatus, TransactionStatus } from '@lib/api'
+import type { OrderStatus, PaymentMethod, PaymentStatus, ShippingCarrier, TransactionStatus } from '@lib/api'
 
 export const ORDER_STATUS: Record<OrderStatus, { label: string; className: string }> = {
   pending: { label: 'Chờ xác nhận', className: 'bg-warning/10 text-warning' },
@@ -28,3 +28,19 @@ export const TRANSACTION_STATUS: Record<TransactionStatus, { label: string; clas
 }
 
 export const statusBadge = 'inline-block rounded-full px-2.5 py-1 text-xs font-bold whitespace-nowrap'
+
+export const SHIPPING_CARRIER: Record<ShippingCarrier, string> = {
+  ghn: 'Giao Hàng Nhanh (GHN)',
+  ghtk: 'Giao Hàng Tiết Kiệm (GHTK)',
+  viettel_post: 'Viettel Post',
+  vnpost: 'VNPost',
+  jt: 'J&T Express',
+  shop: 'Cửa hàng tự giao'
+}
+
+export const SHIPMENT_SUCCESS = {
+  ship: 'Đã chuyển sang đang giao',
+  update: 'Đã cập nhật thông tin vận chuyển',
+  deliver: 'Đã xác nhận giao thành công',
+  return: 'Đã ghi nhận hoàn hàng'
+} as const
