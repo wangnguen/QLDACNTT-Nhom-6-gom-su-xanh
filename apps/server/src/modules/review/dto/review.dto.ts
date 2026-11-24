@@ -1,7 +1,13 @@
 import { z } from 'zod/v4'
 
-import { MAX_RATING, MAX_REVIEW_COMMENT_LENGTH, MIN_RATING } from '@common/constants'
-import { optionalTextSchema, paginationQuerySchema, uuidSchema } from '@common/validators'
+import {
+  MAX_ADMIN_REPLY_LENGTH,
+  MAX_RATING,
+  MAX_REVIEW_COMMENT_LENGTH,
+  MIN_RATING,
+  REVIEW_STATUS
+} from '@common/constants'
+import { optionalTextSchema, paginationQuerySchema, searchQuerySchema, uuidSchema } from '@common/validators'
 
 const ratingSchema = z
   .number('Số sao phải là số')
@@ -46,3 +52,31 @@ export const ProductReviewQuerySchema = paginationQuerySchema.extend({
 })
 
 export type ProductReviewQuery = z.infer<typeof ProductReviewQuerySchema>
+
+// US-25: Quản lý đánh giá (admin) — mới nhất lên trước
+export const AdminReviewQuerySchema = paginationQuerySchema.extend({
+  // Nội dung nhận xét, tên sản phẩm, tên hoặc email khách
+  search: searchQuerySchema.optional(),
+  rating: z.coerce.number().int().min(MIN_RATING).max(MAX_RATING).optional(),
+  status: z.enum(REVIEW_STATUS, 'Trạng thái không hợp lệ').optional(),
+  productId: uuidSchema.optional()
+})
+
+export type AdminReviewQuery = z.infer<typeof AdminReviewQuerySchema>
+
+// US-25: Ẩn / hiện đánh giá, trả lời khách (null hoặc chuỗi rỗng để xoá phản hồi)
+const ModerateReviewBodyBaseSchema = z.object({
+  isHidden: z.boolean('Trạng thái ẩn không hợp lệ').optional(),
+  adminReply: optionalTextSchema('Phản hồi', MAX_ADMIN_REPLY_LENGTH).nullable().optional()
+})
+
+export const ModerateReviewBodyExample = {
+  adminReply: 'Cảm ơn anh đã tin chọn Gốm Sứ Xanh, hẹn gặp lại anh ở workshop!'
+} satisfies z.input<typeof ModerateReviewBodyBaseSchema>
+
+export const ModerateReviewBodySchema = ModerateReviewBodyBaseSchema.refine(
+  (data) => data.isHidden !== undefined || data.adminReply !== undefined,
+  'Không có thông tin nào để cập nhật'
+).meta({ example: ModerateReviewBodyExample })
+
+export type ModerateReviewBody = z.infer<typeof ModerateReviewBodySchema>

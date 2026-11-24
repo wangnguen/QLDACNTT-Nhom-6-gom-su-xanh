@@ -4,13 +4,22 @@ import { registry } from '@docs/registry'
 
 import { idParamSchema } from '@common/validators'
 
-import { CreateReviewBodySchema, ProductReviewQuerySchema, UpdateReviewBodySchema } from '@modules/review/dto'
+import {
+  AdminReviewQuerySchema,
+  CreateReviewBodySchema,
+  ModerateReviewBodySchema,
+  ProductReviewQuerySchema,
+  UpdateReviewBodySchema
+} from '@modules/review/dto'
 
 import {
   RatingSummarySchema,
   ReviewItemSchema,
   badRequestResponse,
   conflictResponse,
+  forbiddenResponse,
+  nullSuccessResponse,
+  paginatedWrapper,
   jsonBody,
   notFoundResponse,
   successWrapper,
@@ -129,5 +138,90 @@ registry.registerPath({
     401: unauthorized,
     404: notFoundResponse('Không tìm thấy đánh giá'),
     422: validationErrorResponse()
+  }
+})
+
+// ─── US-25: Quản lý đánh giá (admin) ─────────────────────────────────────────
+
+const ADMIN_TAG = 'Admin - Đánh giá (US-25)'
+
+const adminErrors = {
+  401: unauthorizedResponse('Thiếu hoặc sai access token'),
+  403: forbiddenResponse('Bạn không có quyền truy cập')
+}
+
+const AdminReviewSchema = registry.register(
+  'AdminReviewItem',
+  ReviewItemSchema.extend({
+    isHidden: z.boolean().meta({ example: false }),
+    product: z.object({
+      id: z.string().uuid(),
+      name: z.string().meta({ example: 'Cốc cà phê men xanh rêu' }),
+      slug: z.string().meta({ example: 'coc-ca-phe-men-xanh-reu' }),
+      imageUrl: z.string().url().nullable()
+    }),
+    customer: z.object({
+      id: z.string().uuid(),
+      fullName: z.string().meta({ example: 'Nguyễn Văn An' }),
+      email: z.string().email().meta({ example: 'nguyenvanan@gmail.com' })
+    }),
+    orderCode: z.string().nullable().meta({ example: 'DH7K3M9Q', description: 'Đơn đã giao chứng minh khách đã mua' })
+  })
+)
+
+registry.registerPath({
+  method: 'get',
+  path: '/admin/reviews',
+  tags: [ADMIN_TAG],
+  summary: 'Danh sách đánh giá',
+  description:
+    'Mới nhất lên trước, gồm cả đánh giá đã ẩn. Tìm theo nhận xét, tên sản phẩm, tên / email khách; lọc theo số sao, trạng thái (`visible` / `hidden`) và sản phẩm.',
+  security: [{ bearerAuth: [] }],
+  request: { query: AdminReviewQuerySchema },
+  responses: {
+    200: {
+      description: 'Danh sách đánh giá',
+      content: { 'application/json': { schema: paginatedWrapper(AdminReviewSchema, '/admin/reviews') } }
+    },
+    ...adminErrors,
+    422: validationErrorResponse()
+  }
+})
+
+registry.registerPath({
+  method: 'patch',
+  path: '/admin/reviews/{id}',
+  tags: [ADMIN_TAG],
+  summary: 'Ẩn / hiện đánh giá, trả lời khách',
+  description: `- \`isHidden\`: đánh giá ẩn không hiện ở trang sản phẩm và không tính vào điểm trung bình
+- \`adminReply\`: phản hồi hiện dưới đánh giá; \`null\` hoặc chuỗi rỗng để xoá; đổi nội dung thì cập nhật \`repliedAt\``,
+  security: [{ bearerAuth: [] }],
+  request: { params: idParamSchema, ...jsonBody(ModerateReviewBodySchema) },
+  responses: {
+    200: {
+      description: 'Đã cập nhật',
+      content: {
+        'application/json': { schema: successWrapper(AdminReviewSchema, '/admin/reviews/{id}', 200, 'Đã lưu phản hồi') }
+      }
+    },
+    ...adminErrors,
+    404: notFoundResponse('Không tìm thấy đánh giá'),
+    422: validationErrorResponse()
+  }
+})
+
+registry.registerPath({
+  method: 'delete',
+  path: '/admin/reviews/{id}',
+  tags: [ADMIN_TAG],
+  summary: 'Xoá đánh giá',
+  description: 'Dùng cho đánh giá spam; khách có thể đánh giá lại sản phẩm.',
+  security: [{ bearerAuth: [] }],
+  request: { params: idParamSchema },
+  responses: {
+    200: nullSuccessResponse('/admin/reviews/{id}', 'Đã xoá đánh giá'),
+    ...adminErrors,
+    404: notFoundResponse('Không tìm thấy đánh giá'),
+    422: validationErrorResponse('ID không hợp lệ')
   }
 })

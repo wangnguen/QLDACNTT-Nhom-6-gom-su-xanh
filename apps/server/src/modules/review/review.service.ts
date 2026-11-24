@@ -1,11 +1,11 @@
-import { REVIEW_NOT_FOUND_MESSAGE } from '@common/constants'
+import { REVIEW_NOT_FOUND_MESSAGE, REVIEW_STATUS } from '@common/constants'
 import { BadRequestError, ConflictError, NotFoundError } from '@common/errors'
-import { MyReviewStatus, ProductReviews, ReviewItem } from '@common/types'
+import { AdminReviewItem, MyReviewStatus, Paginated, ProductReviews, ReviewItem } from '@common/types'
 
 import ProductRepository from '@modules/product/product.repository'
 
-import { CreateReviewBody, ProductReviewQuery, UpdateReviewBody } from './dto'
-import { toRatingSummary, toReviewItem } from './review.mapper'
+import { AdminReviewQuery, CreateReviewBody, ModerateReviewBody, ProductReviewQuery, UpdateReviewBody } from './dto'
+import { toAdminReviewItem, toRatingSummary, toReviewItem } from './review.mapper'
 import ReviewRepository from './review.repository'
 
 const PRODUCT_NOT_FOUND_MESSAGE = 'Không tìm thấy sản phẩm'
@@ -68,6 +68,38 @@ class ReviewService {
 
     const updated = await ReviewRepository.update(id, dto)
     return toReviewItem(updated)
+  }
+
+  // US-25: Danh sách đánh giá ở trang admin (cả đánh giá đã ẩn)
+  static async listForAdmin({ status, ...query }: AdminReviewQuery): Promise<Paginated<AdminReviewItem>> {
+    const isHidden = status === undefined ? undefined : status === REVIEW_STATUS.HIDDEN
+    const [reviews, total] = await ReviewRepository.findMany({ ...query, isHidden, withDetails: true })
+    return { limit: query.limit, offset: query.offset, total_count: total, entries: reviews.map(toAdminReviewItem) }
+  }
+
+  /**
+   * US-25: Ẩn / hiện đánh giá (ẩn thì không hiện ở trang sản phẩm và không tính vào điểm trung bình)
+   * và trả lời khách — ghi thời điểm trả lời khi nội dung phản hồi thay đổi.
+   */
+  static async moderate(id: string, { isHidden, adminReply }: ModerateReviewBody): Promise<AdminReviewItem> {
+    const review = await ReviewRepository.findByIdWithDetails(id)
+    if (!review) throw new NotFoundError(REVIEW_NOT_FOUND_MESSAGE)
+
+    const replyChanged = adminReply !== undefined && adminReply !== review.adminReply
+    await ReviewRepository.update(id, {
+      ...(isHidden !== undefined && { isHidden }),
+      ...(replyChanged && { adminReply, repliedAt: adminReply ? new Date() : null })
+    })
+
+    const updated = await ReviewRepository.findByIdWithDetails(id)
+    return toAdminReviewItem(updated!)
+  }
+
+  // US-25: Xoá đánh giá (spam) — khách có thể đánh giá lại
+  static async remove(id: string): Promise<void> {
+    const review = await ReviewRepository.findById(id)
+    if (!review) throw new NotFoundError(REVIEW_NOT_FOUND_MESSAGE)
+    await ReviewRepository.softDelete(id)
   }
 }
 

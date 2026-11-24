@@ -18,6 +18,7 @@ import AdminPostCategoryRoute from '@modules/post-category/post-category.admin.r
 import PostCategoryRoute from '@modules/post-category/post-category.route'
 import AdminProductRoute from '@modules/product/product.admin.route'
 import ProductRoute from '@modules/product/product.route'
+import AdminReviewRoute from '@modules/review/review.admin.route'
 import ReviewRoute, { productReviewRouter } from '@modules/review/review.route'
 import UserRoute from '@modules/user/user.route'
 import AdminWorkshopRoute from '@modules/workshop/workshop.admin.route'
@@ -50,6 +51,7 @@ router.use('/admin/orders', ...adminOnly, AdminOrderRoute)
 router.use('/admin/payments', ...adminOnly, AdminPaymentRoute)
 router.use('/admin/post-categories', ...adminOnly, AdminPostCategoryRoute)
 router.use('/admin/posts', ...adminOnly, AdminPostRoute)
+router.use('/admin/reviews', ...adminOnly, AdminReviewRoute)
 router.use('/admin/workshops', ...adminOnly, AdminWorkshopRoute)
 router.use('/admin/workshop-registrations', ...adminOnly, AdminWorkshopRegistrationRoute)
 

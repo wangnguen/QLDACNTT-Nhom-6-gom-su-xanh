@@ -31,3 +31,11 @@ export type MyReviewStatus = {
   reason: string | null
   review: (ReviewItem & { isHidden: boolean }) | null
 }
+
+// US-25: Đánh giá ở trang admin — kèm sản phẩm, khách và đơn đã mua
+export type AdminReviewItem = ReviewItem & {
+  isHidden: boolean
+  product: { id: string; name: string; slug: string; imageUrl: string | null }
+  customer: { id: string; fullName: string; email: string }
+  orderCode: string | null
+}

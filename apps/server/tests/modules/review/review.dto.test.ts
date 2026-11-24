@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { CreateReviewBodySchema, ProductReviewQuerySchema, UpdateReviewBodySchema } from '@modules/review/dto'
+import {
+  AdminReviewQuerySchema,
+  CreateReviewBodySchema,
+  ModerateReviewBodySchema,
+  ProductReviewQuerySchema,
+  UpdateReviewBodySchema
+} from '@modules/review/dto'
 
 const PRODUCT_ID = '9f1e2d3c-4b5a-4678-9abc-def012345678'
 
@@ -40,5 +46,30 @@ describe('ProductReviewQuerySchema', () => {
   it('lọc theo số sao từ query string', () => {
     expect(ProductReviewQuerySchema.parse({ rating: '5', limit: '5' })).toEqual({ limit: 5, offset: 0, rating: 5 })
     expect(ProductReviewQuerySchema.safeParse({ rating: '6' }).success).toBe(false)
+  })
+})
+
+describe('AdminReviewQuerySchema', () => {
+  it('lọc theo trạng thái và số sao', () => {
+    expect(AdminReviewQuerySchema.parse({ status: 'hidden', rating: '1' })).toEqual({
+      limit: 12,
+      offset: 0,
+      status: 'hidden',
+      rating: 1
+    })
+    expect(AdminReviewQuerySchema.safeParse({ status: 'deleted' }).success).toBe(false)
+  })
+})
+
+describe('ModerateReviewBodySchema', () => {
+  it('ẩn, trả lời, xoá phản hồi bằng chuỗi rỗng', () => {
+    expect(ModerateReviewBodySchema.parse({ isHidden: true })).toEqual({ isHidden: true })
+    expect(ModerateReviewBodySchema.parse({ adminReply: ' Cảm ơn ' })).toEqual({ adminReply: 'Cảm ơn' })
+    expect(ModerateReviewBodySchema.parse({ adminReply: '' })).toEqual({ adminReply: null })
+  })
+
+  it('từ chối body rỗng và phản hồi quá dài', () => {
+    expect(ModerateReviewBodySchema.safeParse({}).success).toBe(false)
+    expect(ModerateReviewBodySchema.safeParse({ adminReply: 'a'.repeat(1001) }).success).toBe(false)
   })
 })

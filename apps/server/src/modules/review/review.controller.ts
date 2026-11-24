@@ -1,6 +1,12 @@
 import { Request, Response } from 'express'
 
-import { CreateReviewBody, ProductReviewQuerySchema, UpdateReviewBody } from './dto'
+import {
+  AdminReviewQuerySchema,
+  CreateReviewBody,
+  ModerateReviewBody,
+  ProductReviewQuerySchema,
+  UpdateReviewBody
+} from './dto'
 import ReviewService from './review.service'
 
 // Express 5 không cho ghi đè req.query nên controller parse lại (query đã qua validateQuery ở route)
@@ -23,6 +29,24 @@ class ReviewController {
   static async update(req: Request<{ id: string }>, res: Response) {
     const review = await ReviewService.update(req.user!.id, req.params.id, req.body as UpdateReviewBody)
     return res.ok(review, { message: 'Đã cập nhật đánh giá' })
+  }
+
+  // US-25: Quản lý đánh giá (admin)
+  static async listForAdmin(req: Request, res: Response) {
+    return res.ok(await ReviewService.listForAdmin(AdminReviewQuerySchema.parse(req.query)))
+  }
+
+  static async moderate(req: Request<{ id: string }>, res: Response) {
+    const body = req.body as ModerateReviewBody
+    const review = await ReviewService.moderate(req.params.id, body)
+    const message =
+      body.isHidden === undefined ? 'Đã lưu phản hồi' : body.isHidden ? 'Đã ẩn đánh giá' : 'Đã hiện lại đánh giá'
+    return res.ok(review, { message })
+  }
+
+  static async remove(req: Request<{ id: string }>, res: Response) {
+    await ReviewService.remove(req.params.id)
+    return res.ok(null, { message: 'Đã xoá đánh giá' })
   }
 }
 

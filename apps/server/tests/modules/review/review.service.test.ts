@@ -7,13 +7,15 @@ import { toRatingSummary } from '@modules/review/review.mapper'
 import ReviewRepository from '@modules/review/review.repository'
 import ReviewService from '@modules/review/review.service'
 
-import { makeProduct, makeReview } from '../../helpers/factories'
+import { makeOrder, makeProduct, makeReview } from '../../helpers/factories'
 
 vi.mock('@modules/review/review.repository', () => ({
   default: {
     findMany: vi.fn(),
     countByRating: vi.fn(),
     findById: vi.fn(),
+    findByIdWithDetails: vi.fn(),
+    softDelete: vi.fn(),
     findByProductAndUser: vi.fn(),
     findDeliveredOrderId: vi.fn(),
     create: vi.fn(),
@@ -172,5 +174,69 @@ describe('ReviewService.update', () => {
 
     await expect(ReviewService.update('user-1', 'review-1', { rating: 3 })).rejects.toThrow(NotFoundError)
     expect(repo.update).not.toHaveBeenCalled()
+  })
+})
+
+describe('ReviewService (admin)', () => {
+  const detailed = (overrides = {}) => makeReview({ product: makeProduct(), order: makeOrder(), ...overrides })
+
+  it('listForAdmin: đổi trạng thái sang cờ ẩn, load kèm sản phẩm và đơn', async () => {
+    repo.findMany.mockResolvedValue([[detailed({ isHidden: true })], 1])
+
+    const result = await ReviewService.listForAdmin({ limit: 10, offset: 0, status: 'hidden', search: 'men' })
+
+    expect(repo.findMany).toHaveBeenCalledWith({
+      limit: 10,
+      offset: 0,
+      search: 'men',
+      isHidden: true,
+      withDetails: true
+    })
+    expect(result.entries[0]).toMatchObject({
+      isHidden: true,
+      product: { slug: 'binh-hoa-men-lam', imageUrl: 'https://example.com/1.jpg' },
+      customer: { email: 'an.nguyen@gmail.com' },
+      orderCode: 'DH7K3M9Q'
+    })
+  })
+
+  it('moderate: trả lời khách thì ghi thời điểm trả lời', async () => {
+    repo.findByIdWithDetails.mockResolvedValue(detailed())
+
+    await ReviewService.moderate('review-1', { adminReply: 'Cảm ơn bạn!' })
+
+    expect(repo.update).toHaveBeenCalledWith('review-1', { adminReply: 'Cảm ơn bạn!', repliedAt: expect.any(Date) })
+  })
+
+  it('moderate: xoá phản hồi thì xoá luôn thời điểm trả lời', async () => {
+    repo.findByIdWithDetails.mockResolvedValue(detailed({ adminReply: 'Cũ', repliedAt: new Date() }))
+
+    await ReviewService.moderate('review-1', { adminReply: null })
+
+    expect(repo.update).toHaveBeenCalledWith('review-1', { adminReply: null, repliedAt: null })
+  })
+
+  it('moderate: chỉ ẩn thì không đụng tới phản hồi', async () => {
+    repo.findByIdWithDetails.mockResolvedValue(detailed({ adminReply: 'Cũ' }))
+
+    await ReviewService.moderate('review-1', { isHidden: true })
+
+    expect(repo.update).toHaveBeenCalledWith('review-1', { isHidden: true })
+  })
+
+  it('moderate / remove: không tìm thấy', async () => {
+    repo.findByIdWithDetails.mockResolvedValue(null)
+    repo.findById.mockResolvedValue(null)
+
+    await expect(ReviewService.moderate('x', { isHidden: true })).rejects.toThrow(NotFoundError)
+    await expect(ReviewService.remove('x')).rejects.toThrow(NotFoundError)
+  })
+
+  it('remove: xoá mềm', async () => {
+    repo.findById.mockResolvedValue(makeReview())
+
+    await ReviewService.remove('review-1')
+
+    expect(repo.softDelete).toHaveBeenCalledWith('review-1')
   })
 })
