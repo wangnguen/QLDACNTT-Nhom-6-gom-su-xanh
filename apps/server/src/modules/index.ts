@@ -12,6 +12,7 @@ import AdminOrderRoute from '@modules/order/order.admin.route'
 import OrderRoute from '@modules/order/order.route'
 import AdminPaymentRoute from '@modules/payment/payment.admin.route'
 import PaymentRoute from '@modules/payment/payment.route'
+import AdminPostRoute from '@modules/post/post.admin.route'
 import AdminPostCategoryRoute from '@modules/post-category/post-category.admin.route'
 import PostCategoryRoute from '@modules/post-category/post-category.route'
 import AdminProductRoute from '@modules/product/product.admin.route'
@@ -43,6 +44,7 @@ router.use('/admin/products', ...adminOnly, AdminProductRoute)
 router.use('/admin/orders', ...adminOnly, AdminOrderRoute)
 router.use('/admin/payments', ...adminOnly, AdminPaymentRoute)
 router.use('/admin/post-categories', ...adminOnly, AdminPostCategoryRoute)
+router.use('/admin/posts', ...adminOnly, AdminPostRoute)
 router.use('/admin/workshops', ...adminOnly, AdminWorkshopRoute)
 router.use('/admin/workshop-registrations', ...adminOnly, AdminWorkshopRegistrationRoute)
 

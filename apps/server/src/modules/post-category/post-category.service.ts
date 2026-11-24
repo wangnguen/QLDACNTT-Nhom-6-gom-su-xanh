@@ -3,21 +3,26 @@ import { ConflictError, NotFoundError } from '@common/errors'
 import { PostCategoryItem } from '@common/types'
 import { slugify } from '@common/utils/slug'
 
+import PostRepository from '@modules/post/post.repository'
+
 import { CreatePostCategoryBody, UpdatePostCategoryBody } from './dto'
 import { toPostCategoryItem } from './post-category.mapper'
 import PostCategoryRepository from './post-category.repository'
 
 class PostCategoryService {
-  // US-21: Danh mục đang hiện ở trang tin tức
+  // US-21: Danh mục đang hiện ở trang tin tức, kèm số bài đã đăng
   static async list(): Promise<PostCategoryItem[]> {
-    const categories = await PostCategoryRepository.findAll(true)
-    return categories.map((category) => toPostCategoryItem(category, 0))
+    const [categories, counts] = await Promise.all([
+      PostCategoryRepository.findAll(true),
+      PostRepository.countByCategory(true)
+    ])
+    return categories.map((category) => toPostCategoryItem(category, counts.get(category.id) ?? 0))
   }
 
-  // US-21: Danh sách danh mục ở trang admin (gồm cả danh mục đang ẩn)
+  // US-21: Danh sách danh mục ở trang admin (gồm cả danh mục đang ẩn), kèm số bài (cả bản nháp)
   static async listForAdmin(): Promise<PostCategoryItem[]> {
-    const categories = await PostCategoryRepository.findAll()
-    return categories.map((category) => toPostCategoryItem(category, 0))
+    const [categories, counts] = await Promise.all([PostCategoryRepository.findAll(), PostRepository.countByCategory()])
+    return categories.map((category) => toPostCategoryItem(category, counts.get(category.id) ?? 0))
   }
 
   static async create(dto: CreatePostCategoryBody): Promise<PostCategoryItem> {
@@ -35,12 +40,23 @@ class PostCategoryService {
     const slug = dto.name === undefined ? category.slug : slugify(dto.name)
     if (slug !== category.slug) await this.ensureSlugAvailable(slug)
 
-    const updated = await PostCategoryRepository.update(id, { ...dto, slug })
-    return toPostCategoryItem(updated, 0)
+    const [updated, postCount] = await Promise.all([
+      PostCategoryRepository.update(id, { ...dto, slug }),
+      PostRepository.countInCategory(id)
+    ])
+    return toPostCategoryItem(updated, postCount)
   }
 
+  // US-22: Danh mục còn bài viết (kể cả bản nháp) thì không xoá được
   static async remove(id: string): Promise<void> {
     await this.findOrThrow(id)
+
+    const postCount = await PostRepository.countInCategory(id)
+    if (postCount > 0) {
+      throw new ConflictError(
+        `Danh mục đang có ${postCount} bài viết. Hãy chuyển các bài sang danh mục khác hoặc xoá chúng trước`
+      )
+    }
     await PostCategoryRepository.softDelete(id)
   }
 

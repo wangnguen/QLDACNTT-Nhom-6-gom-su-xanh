@@ -111,6 +111,7 @@ registry.registerPath({
     200: nullSuccessResponse('/admin/post-categories/{id}', 'Đã xoá danh mục bài viết'),
     ...adminErrors,
     404: notFoundResponse('Không tìm thấy danh mục bài viết'),
+    409: conflictResponse('Danh mục đang có bài viết'),
     422: validationErrorResponse('ID không hợp lệ')
   }
 })
