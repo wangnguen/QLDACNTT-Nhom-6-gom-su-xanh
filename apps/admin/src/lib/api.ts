@@ -27,7 +27,20 @@ export type {
   RegistrationAction,
   WorkshopRef,
   WorkshopRegistration,
-  AdminRegistrationQuery
+  AdminRegistrationQuery,
+  OrderStatus,
+  PaymentMethod,
+  PaymentStatus,
+  ShippingCarrier,
+  TransactionType,
+  TransactionStatus,
+  OrderAction,
+  OrderLine,
+  OrderCustomer,
+  AdminOrder,
+  Transaction,
+  AdminOrderDetail,
+  AdminOrderQuery
 } from './types'
 
 export { authService } from './services/auth.service'
@@ -36,3 +49,4 @@ export { categoriesService } from './services/categories.service'
 export { productsService } from './services/products.service'
 export { workshopsService } from './services/workshops.service'
 export { registrationsService } from './services/registrations.service'
+export { ordersService } from './services/orders.service'
