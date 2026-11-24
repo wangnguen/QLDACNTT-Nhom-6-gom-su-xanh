@@ -1,2 +1,3 @@
 export { default as EmailService } from './email.service'
 export { default as JWTService } from './jwt.service'
+export { default as VnpayService } from './vnpay.service'

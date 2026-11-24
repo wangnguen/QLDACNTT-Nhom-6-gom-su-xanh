@@ -2,7 +2,18 @@ import { z, ZodType } from 'zod/v4'
 
 import { registry } from '@docs/registry'
 
-import { REGISTRATION_CANCELLED_BY, REGISTRATION_STATUS, WORKSHOP_AVAILABILITY } from '@common/constants'
+import {
+  ORDER_CANCELLED_BY,
+  ORDER_STATUS,
+  PAYMENT_METHOD,
+  PAYMENT_STATUS,
+  REGISTRATION_CANCELLED_BY,
+  SHIPPING_CARRIER,
+  REGISTRATION_STATUS,
+  TRANSACTION_STATUS,
+  TRANSACTION_TYPE,
+  WORKSHOP_AVAILABILITY
+} from '@common/constants'
 
 type NamedExample = { summary?: string; description?: string; value?: unknown }
 
@@ -273,4 +284,108 @@ export const WorkshopRegistrationSchema = registry.register(
     canCancel: z.boolean().meta({ example: true, description: 'Khách còn tự huỷ được không' }),
     workshop: WorkshopRefSchema
   })
+)
+
+// ─── Đơn hàng và giao dịch thanh toán ────────────────────────────────────────
+
+export const OrderLineSchema = registry.register(
+  'OrderLine',
+  z.object({
+    id: z.string().uuid().meta({ example: '0a1b2c3d-4e5f-4678-9abc-def012345678' }),
+    productId: z.string().uuid().nullable().meta({ example: '9f1e2d3c-4b5a-4678-9abc-def012345678' }),
+    productName: z.string().meta({ example: 'Bình hoa men lam vẽ sen' }),
+    productSlug: z.string().meta({ example: 'binh-hoa-men-lam-ve-sen' }),
+    imageUrl: z.string().url().nullable().meta({ example: 'https://example.com/images/binh-hoa-sen-1.jpg' }),
+    unitPrice: z.number().int().meta({ example: 450000, description: 'Giá mỗi sản phẩm lúc đặt (VND)' }),
+    quantity: z.number().int().meta({ example: 2 }),
+    lineTotal: z.number().int().meta({ example: 900000 })
+  })
+)
+
+export const OrderDetailSchema = registry.register(
+  'OrderDetail',
+  z.object({
+    id: z.string().uuid().meta({ example: '3c4d5e6f-7a8b-4c9d-8e0f-123456789abc' }),
+    code: z.string().meta({ example: 'DH7K3M9Q', description: 'Mã đơn hàng' }),
+    status: z.enum(ORDER_STATUS).meta({
+      example: 'pending',
+      description:
+        '`pending` = chờ xác nhận; `confirmed` = đã xác nhận; `shipping` = đang giao; `delivered` = đã giao; `cancelled` = đã huỷ; `returned` = giao không thành công, đã hoàn hàng'
+    }),
+    paymentMethod: z.enum(PAYMENT_METHOD).meta({ example: 'vnpay', description: '`cod` = thanh toán khi nhận hàng' }),
+    paymentStatus: z.enum(PAYMENT_STATUS).meta({
+      example: 'paid',
+      description: '`unpaid`, `paid`, `refund_pending` (chờ cửa hàng hoàn tiền), `refunded`'
+    }),
+    subtotal: z.number().int().meta({ example: 900000 }),
+    shippingFee: z.number().int().meta({ example: 30000, description: 'Miễn phí với đơn từ 1.000.000đ' }),
+    total: z.number().int().meta({ example: 930000 }),
+    itemCount: z.number().int().meta({ example: 2, description: 'Tổng số lượng sản phẩm' }),
+    items: z.array(OrderLineSchema),
+    recipientName: z.string().meta({ example: 'Nguyễn Văn An' }),
+    recipientPhone: z.string().meta({ example: '0912345678' }),
+    shippingAddress: z.string().meta({ example: '12 Bát Tràng, xã Bát Tràng, Gia Lâm, Hà Nội' }),
+    note: z.string().nullable().meta({ example: 'Giao giờ hành chính' }),
+    placedAt: z.string().datetime().meta({ example: '2026-11-20T03:15:00.000Z' }),
+    paidAt: z.string().datetime().nullable().meta({ example: '2026-11-20T03:17:42.000Z' }),
+    confirmedAt: z.string().datetime().nullable().meta({ example: null }),
+    cancelReason: z.string().nullable().meta({ example: null }),
+    cancelledBy: z.enum(ORDER_CANCELLED_BY).nullable().meta({ example: null }),
+    cancelledAt: z.string().datetime().nullable().meta({ example: null }),
+    shippingCarrier: z.enum(SHIPPING_CARRIER).nullable().meta({
+      example: 'ghn',
+      description: 'Đơn vị vận chuyển: `ghn`, `ghtk`, `viettel_post`, `vnpost`, `jt`, `shop` (cửa hàng tự giao)'
+    }),
+    trackingCode: z.string().nullable().meta({ example: 'GHN5K7Q2M9', description: 'Mã vận đơn' }),
+    shippedAt: z.string().datetime().nullable().meta({ example: '2026-11-21T02:00:00.000Z' }),
+    deliveredAt: z.string().datetime().nullable().meta({ example: null }),
+    returnedAt: z.string().datetime().nullable().meta({ example: null }),
+    deliveryNote: z.string().nullable().meta({ example: null, description: 'Lý do giao không thành công' }),
+    canPay: z.boolean().meta({ example: false, description: 'Còn thanh toán trực tuyến lại được không' }),
+    canCancel: z.boolean().meta({ example: true, description: 'Khách còn tự huỷ được không (đơn chờ xác nhận)' })
+  })
+)
+
+export const OrderRefSchema = registry.register(
+  'OrderRef',
+  OrderDetailSchema.pick({ id: true, code: true, status: true, total: true })
+)
+
+export const TransactionSchema = registry.register(
+  'PaymentTransaction',
+  z.object({
+    id: z.string().uuid().meta({ example: '7e8f9a0b-1c2d-4e3f-8a4b-5c6d7e8f9a0b' }),
+    code: z.string().meta({ example: 'TT7K3M9QX2', description: 'Mã giao dịch gửi sang cổng thanh toán (vnp_TxnRef)' }),
+    type: z
+      .enum(TRANSACTION_TYPE)
+      .meta({ example: 'payment', description: '`payment` = thanh toán; `refund` = hoàn tiền' }),
+    method: z.enum(PAYMENT_METHOD).meta({ example: 'vnpay' }),
+    amount: z.number().int().meta({ example: 930000 }),
+    status: z.enum(TRANSACTION_STATUS).meta({ example: 'success' }),
+    gatewayTransactionNo: z.string().nullable().meta({ example: '14212345', description: 'Mã giao dịch tại VNPay' }),
+    bankCode: z.string().nullable().meta({ example: 'NCB' }),
+    responseCode: z.string().nullable().meta({ example: '00', description: 'Mã kết quả VNPay, `00` = thành công' }),
+    message: z.string().meta({ example: 'Thanh toán thành công' }),
+    note: z.string().nullable().meta({ example: null }),
+    createdAt: z.string().datetime().meta({ example: '2026-11-20T03:15:00.000Z' }),
+    completedAt: z.string().datetime().nullable().meta({ example: '2026-11-20T03:17:42.000Z' }),
+    order: OrderRefSchema
+  })
+)
+
+export const AdminOrderSchema = registry.register(
+  'AdminOrder',
+  OrderDetailSchema.extend({
+    customer: z.object({
+      id: z.string().uuid().meta({ example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' }),
+      fullName: z.string().meta({ example: 'Nguyễn Văn An' }),
+      email: z.string().email().meta({ example: 'nguyenvanan@gmail.com' }),
+      phone: z.string().nullable().meta({ example: '0912345678' })
+    })
+  })
+)
+
+export const AdminOrderDetailSchema = registry.register(
+  'AdminOrderDetail',
+  AdminOrderSchema.extend({ transactions: z.array(TransactionSchema) })
 )

@@ -56,11 +56,21 @@ const emailEnvSchema = z.object({
   SMTP_PASS: z.string().default('')
 })
 
+// Cổng thanh toán VNPay — để trống TMN_CODE/HASH_SECRET thì (ngoài production) dùng cổng thanh toán giả lập
+const paymentEnvSchema = z.object({
+  VNPAY_TMN_CODE: z.string().default(''),
+  VNPAY_HASH_SECRET: z.string().default(''),
+  VNPAY_URL: z.url().default('https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'),
+  // Trang client nhận kết quả thanh toán; mặc định CLIENT_URL/payment/result
+  VNPAY_RETURN_URL: z.url().optional()
+})
+
 const envSchema = z.object({
   ...serverEnvSchema.shape,
   ...databaseEnvSchema.shape,
   ...authEnvSchema.shape,
-  ...emailEnvSchema.shape
+  ...emailEnvSchema.shape,
+  ...paymentEnvSchema.shape
 })
 
 export type EnvSchema = z.infer<typeof envSchema>

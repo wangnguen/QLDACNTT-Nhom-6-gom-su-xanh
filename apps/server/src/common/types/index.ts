@@ -1,5 +1,6 @@
 export * from './response.type'
 export * from './auth.type'
 export * from './cart.type'
+export * from './order.type'
 export * from './product.type'
 export * from './workshop.type'

@@ -8,6 +8,10 @@ import CartRoute from '@modules/cart/cart.route'
 import AdminCategoryRoute from '@modules/category/category.admin.route'
 import CategoryRoute from '@modules/category/category.route'
 import HealthRoute from '@modules/health/health.route'
+import AdminOrderRoute from '@modules/order/order.admin.route'
+import OrderRoute from '@modules/order/order.route'
+import AdminPaymentRoute from '@modules/payment/payment.admin.route'
+import PaymentRoute from '@modules/payment/payment.route'
 import AdminProductRoute from '@modules/product/product.admin.route'
 import ProductRoute from '@modules/product/product.route'
 import UserRoute from '@modules/user/user.route'
@@ -26,11 +30,15 @@ router.use('/users', AuthenticateMiddleware.authenticate, UserRoute)
 router.use('/categories', CategoryRoute)
 router.use('/products', ProductRoute)
 router.use('/cart', AuthenticateMiddleware.authenticate, CartRoute)
+router.use('/orders', AuthenticateMiddleware.authenticate, OrderRoute)
+router.use('/payments', PaymentRoute)
 router.use('/workshops', WorkshopRoute)
 router.use('/workshop-registrations', AuthenticateMiddleware.authenticate, WorkshopRegistrationRoute)
 
 router.use('/admin/categories', ...adminOnly, AdminCategoryRoute)
 router.use('/admin/products', ...adminOnly, AdminProductRoute)
+router.use('/admin/orders', ...adminOnly, AdminOrderRoute)
+router.use('/admin/payments', ...adminOnly, AdminPaymentRoute)
 router.use('/admin/workshops', ...adminOnly, AdminWorkshopRoute)
 router.use('/admin/workshop-registrations', ...adminOnly, AdminWorkshopRegistrationRoute)
 

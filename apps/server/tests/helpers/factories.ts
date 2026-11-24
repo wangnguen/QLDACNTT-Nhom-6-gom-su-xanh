@@ -3,6 +3,9 @@ import { hashAuthToken } from '@common/utils/random'
 
 import type { AuthToken } from '@entities/auth-token.entity'
 import type { Category } from '@entities/category.entity'
+import type { OrderItem } from '@entities/order-item.entity'
+import type { Order } from '@entities/order.entity'
+import type { PaymentTransaction } from '@entities/payment-transaction.entity'
 import type { Product } from '@entities/product.entity'
 import type { RefreshToken } from '@entities/refresh-token.entity'
 import type { User } from '@entities/user.entity'
@@ -143,3 +146,77 @@ export const makeRegistration = (overrides: Partial<WorkshopRegistration> = {}):
     deletedAt: null,
     ...overrides
   }) as WorkshopRegistration
+
+export const makeOrderItem = (overrides: Partial<OrderItem> = {}): OrderItem =>
+  ({
+    id: 'order-item-1',
+    orderId: 'order-1',
+    productId: 'product-1',
+    productName: 'Bình hoa men lam',
+    productSlug: 'binh-hoa-men-lam',
+    imageUrl: 'https://example.com/1.jpg',
+    unitPrice: 450000,
+    quantity: 2,
+    lineTotal: 900000,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+    ...overrides
+  }) as OrderItem
+
+// Mặc định: đơn VNPay chờ xác nhận, chưa thanh toán, 2 bình hoa + phí giao hàng
+export const makeOrder = (overrides: Partial<Order> = {}): Order =>
+  ({
+    id: 'order-1',
+    code: 'DH7K3M9Q',
+    userId: 'user-1',
+    status: 'pending',
+    paymentMethod: 'vnpay',
+    paymentStatus: 'unpaid',
+    subtotal: 900000,
+    shippingFee: 30000,
+    total: 930000,
+    recipientName: 'Nguyễn Văn An',
+    recipientPhone: '0912345678',
+    shippingAddress: '12 Bát Tràng, Gia Lâm, Hà Nội',
+    note: null,
+    paidAt: null,
+    confirmedAt: null,
+    cancelReason: null,
+    cancelledBy: null,
+    cancelledAt: null,
+    shippingCarrier: null,
+    trackingCode: null,
+    shippedAt: null,
+    deliveredAt: null,
+    returnedAt: null,
+    deliveryNote: null,
+    items: [makeOrderItem()],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+    ...overrides
+  }) as Order
+
+export const makeTransaction = (overrides: Partial<PaymentTransaction> = {}): PaymentTransaction =>
+  ({
+    id: 'transaction-1',
+    code: 'TT7K3M9QX2',
+    orderId: 'order-1',
+    userId: 'user-1',
+    type: 'payment',
+    method: 'vnpay',
+    amount: 930000,
+    status: 'pending',
+    gatewayTransactionNo: null,
+    bankCode: null,
+    responseCode: null,
+    completedAt: null,
+    expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    note: null,
+    order: makeOrder(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+    ...overrides
+  }) as PaymentTransaction
