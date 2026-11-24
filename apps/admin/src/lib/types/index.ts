@@ -286,3 +286,9 @@ export interface AdminOrderQuery {
   from?: string
   to?: string
 }
+
+// US-19: Mỗi thao tác vận chuyển một bước
+export type ShipmentBody =
+  | { action: 'ship' | 'update'; shippingCarrier: ShippingCarrier; trackingCode: string | null }
+  | { action: 'deliver' }
+  | { action: 'return'; reason: string }

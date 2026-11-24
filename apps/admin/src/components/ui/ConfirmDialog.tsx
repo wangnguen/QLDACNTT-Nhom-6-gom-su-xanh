@@ -10,6 +10,8 @@ interface Props {
   loading?: boolean
   // Biết trước thao tác sẽ không thực hiện được (vd danh mục còn sản phẩm)
   disabled?: boolean
+  // danger = thao tác xoá/huỷ (mặc định); primary = xác nhận thông thường
+  tone?: 'danger' | 'primary'
   onConfirm: () => void
   onClose: () => void
 }
@@ -22,6 +24,7 @@ export function ConfirmDialog({
   confirmText = 'Xoá',
   loading,
   disabled,
+  tone = 'danger',
   onConfirm,
   onClose
 }: Props) {
@@ -36,7 +39,11 @@ export function ConfirmDialog({
           type='button'
           onClick={onConfirm}
           disabled={loading || disabled}
-          className='inline-flex items-center justify-center gap-2 rounded-full bg-danger px-5 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-danger/90 disabled:cursor-not-allowed disabled:opacity-60'
+          className={
+            tone === 'danger'
+              ? 'inline-flex items-center justify-center gap-2 rounded-full bg-danger px-5 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-danger/90 disabled:cursor-not-allowed disabled:opacity-60'
+              : 'btn-primary px-5 py-2.5 text-sm'
+          }
         >
           {loading && <LoaderCircle size={16} className='animate-spin' />}
           {confirmText}
