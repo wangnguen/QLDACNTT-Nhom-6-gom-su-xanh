@@ -292,3 +292,30 @@ export type ShipmentBody =
   | { action: 'ship' | 'update'; shippingCarrier: ShippingCarrier; trackingCode: string | null }
   | { action: 'deliver' }
   | { action: 'return'; reason: string }
+
+// ─── US-20: Giao dịch thanh toán ─────────────────────────────────────────────
+
+export interface AdminTransaction extends Transaction {
+  customer: OrderCustomer
+}
+
+export interface AdminTransactionQuery {
+  limit?: number
+  offset?: number
+  search?: string
+  type?: TransactionType
+  status?: TransactionStatus
+  method?: PaymentMethod
+  from?: string
+  to?: string
+}
+
+export interface TransactionSummary {
+  receivedAmount: number
+  receivedCount: number
+  refundedAmount: number
+  refundedCount: number
+  pendingRefundAmount: number
+  pendingRefundCount: number
+  failedCount: number
+}
