@@ -331,7 +331,8 @@ export const OrderDetailSchema = registry.register(
     cancelReason: z.string().nullable().meta({ example: null }),
     cancelledBy: z.enum(ORDER_CANCELLED_BY).nullable().meta({ example: null }),
     cancelledAt: z.string().datetime().nullable().meta({ example: null }),
-    canPay: z.boolean().meta({ example: false, description: 'Còn thanh toán trực tuyến lại được không' })
+    canPay: z.boolean().meta({ example: false, description: 'Còn thanh toán trực tuyến lại được không' }),
+    canCancel: z.boolean().meta({ example: true, description: 'Khách còn tự huỷ được không (đơn chờ xác nhận)' })
   })
 )
 

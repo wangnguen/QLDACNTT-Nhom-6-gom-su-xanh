@@ -1,10 +1,12 @@
 import {
   ORDER_NOT_FOUND_MESSAGE,
+  ORDER_STATUS,
   PAYMENT_EXPIRE_MINUTES,
   PAYMENT_METHOD,
   PAYMENT_STATUS,
   TRANSACTION_NOT_FOUND_MESSAGE,
-  TRANSACTION_STATUS
+  TRANSACTION_STATUS,
+  TRANSACTION_TYPE
 } from '@common/constants'
 import { BadRequestError, NotFoundError } from '@common/errors'
 import { VnpayService } from '@common/services'
@@ -21,8 +23,9 @@ import { PaymentTransaction } from '@entities/payment-transaction.entity'
 import { toTransactionItem } from './payment.mapper'
 import PaymentRepository, { OrderPaymentChange, TransactionResultChange } from './payment.repository'
 
-// Mã giao dịch: TT + 8 ký tự, vd TT7K3M9QX2 (dùng làm vnp_TxnRef)
+// Mã giao dịch: TT + 8 ký tự, vd TT7K3M9QX2 (dùng làm vnp_TxnRef); giao dịch hoàn tiền: HT + 8 ký tự
 const TRANSACTION_CODE_PREFIX = 'TT'
+const REFUND_CODE_PREFIX = 'HT'
 
 export const ONLINE_PAYMENT_DISABLED_MESSAGE =
   'Hiện chưa nhận thanh toán trực tuyến, vui lòng chọn thanh toán khi nhận hàng'
@@ -48,6 +51,19 @@ class PaymentService {
       method: PAYMENT_METHOD.VNPAY,
       amount,
       expiresAt: new Date(now.getTime() + PAYMENT_EXPIRE_MINUTES * 60 * 1000)
+    }
+  }
+
+  // US-16: Yêu cầu hoàn tiền cho đơn đã thanh toán bị huỷ — chờ cửa hàng hoàn tiền rồi xác nhận
+  static newRefund(order: Pick<Order, 'userId' | 'paymentMethod' | 'total'>, note: string): NewTransactionData {
+    return {
+      code: generateCode(REFUND_CODE_PREFIX, 8),
+      userId: order.userId,
+      type: TRANSACTION_TYPE.REFUND,
+      method: order.paymentMethod,
+      amount: order.total,
+      expiresAt: null,
+      note
     }
   }
 
@@ -109,7 +125,10 @@ class PaymentService {
       : { RspCode: '02', Message: 'Order already confirmed' }
   }
 
-  // Ghi kết quả một lần duy nhất; thanh toán thành công thì đơn chuyển sang "đã thanh toán"
+  /**
+   * Ghi kết quả một lần duy nhất; thanh toán thành công thì đơn chuyển sang "đã thanh toán".
+   * Khách trả tiền ở tab khác sau khi đã huỷ đơn (US-16) thì đơn chuyển sang chờ hoàn tiền.
+   */
   private static async applyResult(transaction: PaymentTransaction, result: VnpayResult): Promise<boolean> {
     if (transaction.status !== TRANSACTION_STATUS.PENDING) return false
 
@@ -126,11 +145,17 @@ class PaymentService {
       note: amountMatches ? null : 'Số tiền thanh toán không khớp với đơn hàng'
     }
 
-    const orderChange: OrderPaymentChange | undefined = success
-      ? { orderId: transaction.orderId, change: { paymentStatus: PAYMENT_STATUS.PAID, paidAt: completedAt } }
-      : undefined
+    const buildOrderChange = (order: Order): OrderPaymentChange => {
+      if (order.status === ORDER_STATUS.CANCELLED) {
+        return {
+          change: { paymentStatus: PAYMENT_STATUS.REFUND_PENDING, paidAt: completedAt },
+          refund: this.newRefund(order, 'Khách thanh toán sau khi đơn đã huỷ')
+        }
+      }
+      return { change: { paymentStatus: PAYMENT_STATUS.PAID, paidAt: completedAt } }
+    }
 
-    return PaymentRepository.applyGatewayResult(transaction.id, change, orderChange)
+    return PaymentRepository.applyGatewayResult(transaction, change, success ? buildOrderChange : undefined)
   }
 }
 

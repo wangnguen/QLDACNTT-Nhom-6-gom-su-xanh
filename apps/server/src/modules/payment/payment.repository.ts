@@ -13,8 +13,9 @@ export type TransactionResultChange = Pick<
 >
 
 export type OrderPaymentChange = {
-  orderId: string
   change: Partial<Pick<Order, 'paymentStatus' | 'paidAt'>>
+  // Tiền về sau khi đơn đã bị huỷ → tạo luôn yêu cầu hoàn tiền
+  refund?: NewTransactionData
 }
 
 class PaymentRepository {
@@ -41,19 +42,27 @@ class PaymentRepository {
   /**
    * Ghi kết quả cổng thanh toán (một transaction DB): chỉ ghi khi giao dịch còn `pending` nên trình duyệt
    * và IPN cùng báo về thì chỉ lần đầu có tác dụng. Trả về false nếu giao dịch đã có kết quả trước đó.
+   *
+   * Dòng đơn hàng được khoá trước (cùng thứ tự với lúc huỷ đơn) để kết quả thanh toán và thao tác huỷ đơn
+   * không chen nhau; `buildOrderChange` nhận đơn đang khoá và quyết định cập nhật gì cho đơn.
    */
   static applyGatewayResult(
-    transactionId: string,
+    transaction: Pick<PaymentTransaction, 'id' | 'orderId'>,
     change: TransactionResultChange,
-    orderChange?: OrderPaymentChange
+    buildOrderChange?: (order: Order) => OrderPaymentChange
   ): Promise<boolean> {
     return AppDataSource.getDataSource().transaction(async (manager) => {
+      const orderRepo = manager.getRepository(Order)
+      const order = await orderRepo.findOne({ where: { id: transaction.orderId }, lock: { mode: 'pessimistic_write' } })
+
       const repo = manager.getRepository(PaymentTransaction)
-      const result = await repo.update({ id: transactionId, status: TRANSACTION_STATUS.PENDING }, change)
+      const result = await repo.update({ id: transaction.id, status: TRANSACTION_STATUS.PENDING }, change)
       if ((result.affected ?? 0) === 0) return false
 
-      if (orderChange) {
-        await manager.getRepository(Order).update(orderChange.orderId, orderChange.change)
+      if (order && buildOrderChange) {
+        const { change: orderChange, refund } = buildOrderChange(order)
+        await orderRepo.update(order.id, orderChange)
+        if (refund) await repo.save(repo.create({ ...refund, orderId: order.id }))
       }
       return true
     })

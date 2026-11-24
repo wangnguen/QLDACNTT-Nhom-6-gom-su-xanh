@@ -48,6 +48,18 @@ export type OrderFilter = {
   offset: number
 }
 
+export type OrderStatusChange = Partial<
+  Pick<Order, 'status' | 'paymentStatus' | 'paidAt' | 'confirmedAt' | 'cancelReason' | 'cancelledBy' | 'cancelledAt'>
+>
+
+export type OrderTransition = {
+  change: OrderStatusChange
+  // Trả lại tồn kho cho các sản phẩm trong đơn (huỷ đơn, hoàn hàng)
+  restock?: boolean
+  // Giao dịch phát sinh cùng lúc (vd yêu cầu hoàn tiền)
+  transactions?: NewTransactionData[]
+}
+
 export type CheckoutPlan = {
   order: NewOrderData
   items: NewOrderItemData[]
@@ -73,6 +85,35 @@ class OrderRepository {
       .skip(filter.offset)
       .take(filter.limit)
       .getManyAndCount()
+  }
+
+  /**
+   * Đổi trạng thái đơn trong một transaction có khoá dòng đơn: chỉ đổi khi đơn vẫn ở một trong `fromStatuses`
+   * (khách huỷ đúng lúc cửa hàng xác nhận thì chỉ một bên thành công). `build` nhận đơn đang khoá — tình trạng
+   * thanh toán đọc ra lúc này là mới nhất. Trả về false nếu trạng thái đơn đã đổi.
+   */
+  static transition(id: string, fromStatuses: OrderStatus[], build: (order: Order) => OrderTransition) {
+    return AppDataSource.getDataSource().transaction(async (manager) => {
+      const orderRepo = manager.getRepository(Order)
+      const order = await orderRepo.findOne({ where: { id }, lock: { mode: 'pessimistic_write' } })
+      if (!order || !fromStatuses.includes(order.status)) return false
+
+      const { change, restock, transactions = [] } = build(order)
+      await orderRepo.update(id, change)
+
+      if (restock) {
+        const items = await manager.getRepository(OrderItem).find({ where: { orderId: id } })
+        for (const item of items) {
+          if (item.productId) {
+            await manager.getRepository(Product).increment({ id: item.productId }, 'stock', item.quantity)
+          }
+        }
+      }
+
+      const transactionRepo = manager.getRepository(PaymentTransaction)
+      for (const data of transactions) await transactionRepo.save(transactionRepo.create({ ...data, orderId: id }))
+      return true
+    })
   }
 
   /**

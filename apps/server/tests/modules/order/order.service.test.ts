@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { BadRequestError, NotFoundError } from '@common/errors'
+import { BadRequestError, ConflictError, NotFoundError } from '@common/errors'
 
-import OrderRepository, { CheckoutLine, CheckoutPlan } from '@modules/order/order.repository'
+import OrderRepository, { CheckoutLine, CheckoutPlan, OrderTransition } from '@modules/order/order.repository'
 import OrderService, { calculateShippingFee } from '@modules/order/order.service'
 
 import type { Order } from '@entities/order.entity'
@@ -14,7 +14,8 @@ vi.mock('@modules/order/order.repository', () => ({
   default: {
     createFromCart: vi.fn(),
     findById: vi.fn(),
-    findMany: vi.fn()
+    findMany: vi.fn(),
+    transition: vi.fn()
   }
 }))
 
@@ -183,5 +184,67 @@ describe('OrderService.getMine', () => {
     repo.findById.mockResolvedValue(order)
 
     await expect(OrderService.getMine('user-1', 'order-1')).rejects.toThrow(NotFoundError)
+  })
+})
+
+describe('OrderService.cancelMine', () => {
+  // Giả lập transition: chạy `build` với đơn đang khoá, trả về những gì service muốn ghi
+  const mockTransition = (locked: Order) => {
+    let transition: OrderTransition | undefined
+    repo.transition.mockImplementation(async (_id, from, build) => {
+      if (!from.includes(locked.status)) return false
+      transition = build(locked)
+      return true
+    })
+    return () => transition!
+  }
+
+  it('huỷ đơn chưa thanh toán: ghi lý do, trả lại tồn kho, không hoàn tiền', async () => {
+    const order = makeOrder()
+    repo.findById.mockResolvedValueOnce(order).mockResolvedValueOnce(makeOrder({ status: 'cancelled' }))
+    const getTransition = mockTransition(order)
+
+    const result = await OrderService.cancelMine('user-1', 'order-1', { reason: 'Đặt nhầm' })
+
+    expect(repo.transition).toHaveBeenCalledWith('order-1', ['pending'], expect.any(Function))
+    expect(getTransition()).toEqual({
+      change: { status: 'cancelled', cancelReason: 'Đặt nhầm', cancelledBy: 'user', cancelledAt: expect.any(Date) },
+      restock: true,
+      transactions: []
+    })
+    expect(result).toMatchObject({ status: 'cancelled', canCancel: false, canPay: false })
+  })
+
+  it('đơn đã thanh toán: chờ hoàn tiền và tạo giao dịch hoàn đúng số tiền', async () => {
+    const order = makeOrder({ paymentStatus: 'paid' })
+    repo.findById.mockResolvedValue(order)
+    const getTransition = mockTransition(order)
+
+    await OrderService.cancelMine('user-1', 'order-1', { reason: null })
+
+    expect(getTransition().change.paymentStatus).toBe('refund_pending')
+    expect(getTransition().transactions).toEqual([
+      expect.objectContaining({ type: 'refund', method: 'vnpay', amount: 930000, userId: 'user-1' })
+    ])
+    expect(getTransition().transactions![0].code).toMatch(/^HT[A-Z2-9]{8}$/)
+  })
+
+  it.each([
+    ['đơn đã được xác nhận', makeOrder({ status: 'confirmed' }), 'liên hệ cửa hàng'],
+    ['đơn đang giao', makeOrder({ status: 'shipping' }), 'đang giao'],
+    ['đơn đã huỷ', makeOrder({ status: 'cancelled' }), 'đã huỷ'],
+    ['đơn của người khác', makeOrder({ userId: 'user-2' }), NotFoundError]
+  ])('không cho huỷ khi %s', async (_case, order, error) => {
+    repo.findById.mockResolvedValue(order)
+
+    await expect(OrderService.cancelMine('user-1', 'order-1', { reason: null })).rejects.toThrow(error)
+    expect(repo.transition).not.toHaveBeenCalled()
+  })
+
+  it('báo tải lại khi cửa hàng vừa xác nhận đơn', async () => {
+    repo.findById.mockResolvedValue(makeOrder())
+    repo.transition.mockResolvedValue(false)
+
+    await expect(OrderService.cancelMine('user-1', 'order-1', { reason: null })).rejects.toThrow(ConflictError)
   })
 })

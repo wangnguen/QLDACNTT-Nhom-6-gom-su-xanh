@@ -45,6 +45,8 @@ export type OrderDetail = {
   cancelledAt: Date | null
   // Khách còn thanh toán trực tuyến lại được (đơn VNPay chưa thanh toán, chưa huỷ)
   canPay: boolean
+  // Khách còn tự huỷ được (đơn chờ xác nhận)
+  canCancel: boolean
 }
 
 // Thông tin đơn gắn kèm mỗi giao dịch

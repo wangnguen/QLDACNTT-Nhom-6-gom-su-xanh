@@ -3,7 +3,7 @@ import { Request, Response } from 'express'
 import { getClientIp } from '@modules/payment/payment.controller'
 import PaymentService from '@modules/payment/payment.service'
 
-import { CreateOrderBody, MyOrderQuerySchema } from './dto'
+import { CancelOrderBody, CreateOrderBody, MyOrderQuerySchema } from './dto'
 import OrderService from './order.service'
 
 class OrderController {
@@ -25,6 +25,17 @@ class OrderController {
   static async getMine(req: Request<{ id: string }>, res: Response) {
     const order = await OrderService.getMine(req.user!.id, req.params.id)
     return res.ok(order)
+  }
+
+  // US-16: Huỷ đơn hàng
+  static async cancel(req: Request<{ id: string }>, res: Response) {
+    const order = await OrderService.cancelMine(req.user!.id, req.params.id, req.body as CancelOrderBody)
+    return res.ok(order, {
+      message:
+        order.paymentStatus === 'refund_pending'
+          ? 'Đã huỷ đơn hàng. Cửa hàng sẽ hoàn tiền cho bạn trong 3–5 ngày làm việc'
+          : 'Đã huỷ đơn hàng'
+    })
   }
 
   static async pay(req: Request<{ id: string }>, res: Response) {

@@ -47,6 +47,9 @@ export const FREE_SHIPPING_THRESHOLD = 1_000_000
 // Link thanh toán VNPay hết hạn sau bao nhiêu phút
 export const PAYMENT_EXPIRE_MINUTES = 15
 
+// Khách tự huỷ được khi đơn còn chờ xác nhận; đơn đã xác nhận phải liên hệ cửa hàng
+export const CUSTOMER_CANCELLABLE_STATUSES: OrderStatus[] = [ORDER_STATUS.PENDING]
+
 export const ORDER_NOT_FOUND_MESSAGE = 'Không tìm thấy đơn hàng'
 
 // ─── Giao dịch thanh toán ─────────────────────────────────────────────────────

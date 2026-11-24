@@ -67,10 +67,12 @@ describe('PaymentService.handleReturn', () => {
 
     expect(repo.findByCode).toHaveBeenCalledWith('TT7K3M9QX2')
     expect(repo.applyGatewayResult).toHaveBeenCalledWith(
-      'transaction-1',
+      transaction,
       expect.objectContaining({ status: 'success', responseCode: '00', bankCode: 'NCB', note: null }),
-      { orderId: 'order-1', change: { paymentStatus: 'paid', paidAt: expect.any(Date) } }
+      expect.any(Function)
     )
+    const buildOrderChange = repo.applyGatewayResult.mock.calls[0][2]!
+    expect(buildOrderChange(makeOrder())).toEqual({ change: { paymentStatus: 'paid', paidAt: expect.any(Date) } })
     expect(result.transaction).toMatchObject({ status: 'success', message: 'Thanh toán thành công' })
     expect(result.order).toMatchObject({ paymentStatus: 'paid', canPay: false })
   })
@@ -83,12 +85,26 @@ describe('PaymentService.handleReturn', () => {
     const result = await PaymentService.handleReturn(gatewayResult(transaction, false))
 
     expect(repo.applyGatewayResult).toHaveBeenCalledWith(
-      'transaction-1',
+      expect.objectContaining({ id: 'transaction-1' }),
       expect.objectContaining({ status: 'failed', responseCode: '24' }),
       undefined
     )
     expect(result.transaction.message).toBe('Khách hàng huỷ giao dịch')
     expect(result.order.canPay).toBe(true)
+  })
+
+  it('khách trả tiền sau khi đơn đã huỷ: đơn chuyển sang chờ hoàn tiền và tạo giao dịch hoàn', async () => {
+    const transaction = makeTransaction()
+    repo.findByCode.mockResolvedValue(transaction)
+    repo.findById.mockResolvedValue(transaction)
+
+    await PaymentService.handleReturn(gatewayResult(transaction, true))
+
+    const buildOrderChange = repo.applyGatewayResult.mock.calls[0][2]!
+    expect(buildOrderChange(makeOrder({ status: 'cancelled' }))).toEqual({
+      change: { paymentStatus: 'refund_pending', paidAt: expect.any(Date) },
+      refund: expect.objectContaining({ type: 'refund', method: 'vnpay', amount: 930000, userId: 'user-1' })
+    })
   })
 
   it('giao dịch đã có kết quả (IPN báo trước) thì không ghi lại', async () => {
@@ -109,7 +125,7 @@ describe('PaymentService.handleReturn', () => {
     await PaymentService.handleReturn(gatewayResult(transaction, true))
 
     expect(repo.applyGatewayResult).toHaveBeenCalledWith(
-      'transaction-1',
+      expect.objectContaining({ id: 'transaction-1' }),
       expect.objectContaining({ status: 'failed', note: 'Số tiền thanh toán không khớp với đơn hàng' }),
       undefined
     )

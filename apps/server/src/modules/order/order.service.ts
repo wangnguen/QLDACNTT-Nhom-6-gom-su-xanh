@@ -1,19 +1,43 @@
-import { FREE_SHIPPING_THRESHOLD, ORDER_NOT_FOUND_MESSAGE, PAYMENT_METHOD, SHIPPING_FEE } from '@common/constants'
-import { BadRequestError, NotFoundError } from '@common/errors'
+import {
+  CUSTOMER_CANCELLABLE_STATUSES,
+  FREE_SHIPPING_THRESHOLD,
+  ORDER_CANCELLED_BY,
+  ORDER_NOT_FOUND_MESSAGE,
+  ORDER_STATUS,
+  OrderCancelledBy,
+  OrderStatus,
+  PAYMENT_METHOD,
+  PAYMENT_STATUS,
+  SHIPPING_FEE
+} from '@common/constants'
+import { BadRequestError, ConflictError, NotFoundError } from '@common/errors'
 import { CheckoutResult, OrderDetail, Paginated } from '@common/types'
 import { generateCode } from '@common/utils/random'
 
 import PaymentService from '@modules/payment/payment.service'
 
-import { CreateOrderBody, MyOrderQuery } from './dto'
+import { Order } from '@entities/order.entity'
+
+import { CancelOrderBody, CreateOrderBody, MyOrderQuery } from './dto'
 import { toOrderDetail } from './order.mapper'
-import OrderRepository, { CheckoutLine, CheckoutPlan, NewOrderItemData } from './order.repository'
+import OrderRepository, { CheckoutLine, CheckoutPlan, NewOrderItemData, OrderTransition } from './order.repository'
 
 // Mã đơn hàng: DH + 6 ký tự, vd DH7K3M9Q
 const ORDER_CODE_PREFIX = 'DH'
 
 // Cột tiền là integer — chặn đơn có giá trị bất thường
 export const MAX_ORDER_TOTAL = 1_000_000_000
+
+export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  pending: 'chờ xác nhận',
+  confirmed: 'đã xác nhận',
+  shipping: 'đang giao',
+  delivered: 'đã giao',
+  cancelled: 'đã huỷ',
+  returned: 'đã hoàn hàng'
+}
+
+export const ORDER_CHANGED_MESSAGE = 'Trạng thái đơn hàng vừa thay đổi, vui lòng tải lại trang'
 
 // Đơn từ FREE_SHIPPING_THRESHOLD trở lên được miễn phí giao hàng
 export const calculateShippingFee = (subtotal: number): number =>
@@ -49,6 +73,62 @@ class OrderService {
   // US-15: Chi tiết đơn hàng — đơn của người khác báo không tìm thấy để không lộ thông tin
   static async getMine(userId: string, id: string): Promise<OrderDetail> {
     return toOrderDetail(await this.findOwnOrThrow(userId, id))
+  }
+
+  // US-16: Khách tự huỷ đơn còn chờ xác nhận — trả lại tồn kho; đơn đã thanh toán thì chờ cửa hàng hoàn tiền
+  static async cancelMine(userId: string, id: string, { reason }: CancelOrderBody): Promise<OrderDetail> {
+    const order = await this.findOwnOrThrow(userId, id)
+    if (!CUSTOMER_CANCELLABLE_STATUSES.includes(order.status)) {
+      throw new BadRequestError(
+        order.status === ORDER_STATUS.CONFIRMED
+          ? 'Đơn hàng đã được cửa hàng xác nhận, vui lòng liên hệ cửa hàng nếu muốn huỷ'
+          : `Đơn hàng đang ở trạng thái "${ORDER_STATUS_LABEL[order.status]}", không thể huỷ`
+      )
+    }
+    return this.cancel(order, CUSTOMER_CANCELLABLE_STATUSES, ORDER_CANCELLED_BY.USER, reason)
+  }
+
+  /**
+   * Huỷ đơn (khách hoặc cửa hàng): trả lại tồn kho; nếu đơn đã thanh toán thì chuyển sang chờ hoàn tiền và
+   * tạo giao dịch hoàn tiền để cửa hàng xử lý (US-20).
+   */
+  static async cancel(
+    order: Order,
+    fromStatuses: OrderStatus[],
+    cancelledBy: OrderCancelledBy,
+    reason: string | null
+  ): Promise<OrderDetail> {
+    const changed = await OrderRepository.transition(order.id, fromStatuses, (locked): OrderTransition => {
+      const paid = locked.paymentStatus === PAYMENT_STATUS.PAID
+      return {
+        change: {
+          status: ORDER_STATUS.CANCELLED,
+          cancelReason: reason,
+          cancelledBy,
+          cancelledAt: new Date(),
+          ...(paid && { paymentStatus: PAYMENT_STATUS.REFUND_PENDING })
+        },
+        restock: true,
+        transactions: paid
+          ? [
+              PaymentService.newRefund(
+                locked,
+                cancelledBy === ORDER_CANCELLED_BY.USER
+                  ? 'Khách huỷ đơn đã thanh toán'
+                  : 'Cửa hàng huỷ đơn đã thanh toán'
+              )
+            ]
+          : []
+      }
+    })
+    return this.reloadAfterChange(order.id, changed)
+  }
+
+  // Trạng thái có thể vừa bị bên kia đổi → báo tải lại thay vì ghi đè
+  static async reloadAfterChange(id: string, changed: boolean): Promise<OrderDetail> {
+    if (!changed) throw new ConflictError(ORDER_CHANGED_MESSAGE)
+    const updated = await OrderRepository.findById(id)
+    return toOrderDetail(updated!)
   }
 
   static async findOwnOrThrow(userId: string, id: string) {

@@ -4,11 +4,12 @@ import { registry } from '@docs/registry'
 
 import { idParamSchema } from '@common/validators'
 
-import { CreateOrderBodySchema, MyOrderQuerySchema } from '@modules/order/dto'
+import { CancelOrderBodySchema, CreateOrderBodySchema, MyOrderQuerySchema } from '@modules/order/dto'
 
 import {
   OrderDetailSchema,
   badRequestResponse,
+  conflictResponse,
   jsonBody,
   notFoundResponse,
   paginatedWrapper,
@@ -137,5 +138,37 @@ registry.registerPath({
     401: unauthorized,
     404: notFoundResponse('Không tìm thấy đơn hàng'),
     422: validationErrorResponse('ID không hợp lệ')
+  }
+})
+
+// ─── US-16: Huỷ đơn hàng ─────────────────────────────────────────────────────
+
+registry.registerPath({
+  method: 'patch',
+  path: '/orders/{id}/cancel',
+  tags: ['Đơn hàng - Huỷ đơn (US-16)'],
+  summary: 'Khách huỷ đơn hàng',
+  description: `Chỉ huỷ được đơn của chính mình khi đơn còn \`pending\` (xem \`canCancel\`); đơn đã xác nhận phải liên hệ cửa hàng.
+
+- Sản phẩm trong đơn được trả lại tồn kho
+- Đơn đã thanh toán trực tuyến: \`paymentStatus\` chuyển sang \`refund_pending\` và có một giao dịch hoàn tiền chờ cửa hàng xử lý
+- Body không bắt buộc; \`reason\` là lý do huỷ`,
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: idParamSchema,
+    body: { required: false, content: { 'application/json': { schema: CancelOrderBodySchema } } }
+  },
+  responses: {
+    200: {
+      description: 'Đã huỷ đơn hàng',
+      content: {
+        'application/json': { schema: successWrapper(OrderDetailSchema, '/orders/{id}/cancel', 200, 'Đã huỷ đơn hàng') }
+      }
+    },
+    400: badRequestResponse('Đơn hàng đã được xác nhận / không còn huỷ được'),
+    401: unauthorized,
+    404: notFoundResponse('Không tìm thấy đơn hàng'),
+    409: conflictResponse('Trạng thái đơn hàng vừa thay đổi'),
+    422: validationErrorResponse()
   }
 })

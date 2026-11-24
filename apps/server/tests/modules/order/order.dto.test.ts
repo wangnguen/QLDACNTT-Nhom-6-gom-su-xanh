@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { CreateOrderBodySchema, MyOrderQuerySchema } from '@modules/order/dto'
+import { CancelOrderBodySchema, CreateOrderBodySchema, MyOrderQuerySchema } from '@modules/order/dto'
 
 const validBody = {
   recipientName: ' Nguyễn Văn An ',
@@ -44,5 +44,17 @@ describe('MyOrderQuerySchema', () => {
 
   it('từ chối trạng thái lạ', () => {
     expect(MyOrderQuerySchema.safeParse({ status: 'done' }).success).toBe(false)
+  })
+})
+
+describe('CancelOrderBodySchema', () => {
+  it('body rỗng hoặc không gửi body đều được, lý do rỗng = null', () => {
+    expect(CancelOrderBodySchema.parse(undefined)).toEqual({ reason: null })
+    expect(CancelOrderBodySchema.parse({ reason: '  ' })).toEqual({ reason: null })
+    expect(CancelOrderBodySchema.parse({ reason: 'Đặt nhầm' })).toEqual({ reason: 'Đặt nhầm' })
+  })
+
+  it('từ chối lý do quá 255 ký tự', () => {
+    expect(CancelOrderBodySchema.safeParse({ reason: 'a'.repeat(256) }).success).toBe(false)
   })
 })

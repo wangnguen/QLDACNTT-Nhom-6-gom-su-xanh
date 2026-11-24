@@ -1,4 +1,4 @@
-import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_STATUS } from '@common/constants'
+import { CUSTOMER_CANCELLABLE_STATUSES, ORDER_STATUS, PAYMENT_METHOD, PAYMENT_STATUS } from '@common/constants'
 import { OrderDetail, OrderLine, OrderRef } from '@common/types'
 
 import { OrderItem } from '@entities/order-item.entity'
@@ -47,7 +47,8 @@ export const toOrderDetail = (order: Order): OrderDetail => {
     cancelReason: order.cancelReason,
     cancelledBy: order.cancelledBy,
     cancelledAt: order.cancelledAt,
-    canPay: canPayOnline(order)
+    canPay: canPayOnline(order),
+    canCancel: CUSTOMER_CANCELLABLE_STATUSES.includes(order.status)
   }
 }
 
