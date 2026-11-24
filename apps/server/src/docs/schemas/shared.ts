@@ -409,3 +409,41 @@ export const PostCategoryItemSchema = registry.register(
     postCount: z.number().int().meta({ example: 6 })
   })
 )
+
+export const PostSummarySchema = registry.register(
+  'PostSummary',
+  z.object({
+    id: z.string().uuid().meta({ example: 'e5f6a7b8-c9d0-4e1f-8a2b-3c4d5e6f7a80' }),
+    title: z.string().meta({ example: 'Phân biệt men lam và men rạn Bát Tràng' }),
+    slug: z.string().meta({ example: 'phan-biet-men-lam-va-men-ran-bat-trang' }),
+    excerpt: z
+      .string()
+      .meta({ example: 'Hai dòng men nổi tiếng nhất của làng gốm và cách nhận biết bằng mắt thường.' }),
+    coverImageUrl: z.string().url().nullable().meta({ example: 'https://example.com/images/men-lam.jpg' }),
+    category: PostCategoryRefSchema,
+    status: z.enum(['draft', 'published']).meta({ example: 'published' }),
+    publishedAt: z.string().datetime().nullable().meta({ example: '2026-11-20T03:00:00.000Z' }),
+    readingMinutes: z.number().int().meta({ example: 4, description: 'Ước lượng thời gian đọc (phút)' }),
+    viewCount: z.number().int().meta({ example: 128 }),
+    author: z
+      .object({ id: z.string().uuid(), fullName: z.string() })
+      .nullable()
+      .meta({ example: { id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', fullName: 'Quản trị viên' } }),
+    updatedAt: z.string().datetime().meta({ example: '2026-11-20T03:00:00.000Z' })
+  })
+)
+
+export const PostDetailSchema = registry.register(
+  'PostDetail',
+  PostSummarySchema.extend({
+    content: z.string().meta({
+      example:
+        'Men lam là lớp men trong phủ trên hoạ tiết vẽ bằng ô-xít coban.\n\n## Men rạn\n\nMen rạn tạo các vết nứt nhỏ...',
+      description: 'Đoạn văn cách nhau bởi dòng trống; dòng bắt đầu bằng "## " là tiêu đề mục'
+    }),
+    customExcerpt: z
+      .string()
+      .nullable()
+      .meta({ example: null, description: 'Tóm tắt admin nhập (null = tự lấy từ nội dung)' })
+  })
+)

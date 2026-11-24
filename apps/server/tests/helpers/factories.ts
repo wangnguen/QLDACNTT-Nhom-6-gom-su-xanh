@@ -7,6 +7,7 @@ import type { OrderItem } from '@entities/order-item.entity'
 import type { Order } from '@entities/order.entity'
 import type { PaymentTransaction } from '@entities/payment-transaction.entity'
 import type { PostCategory } from '@entities/post-category.entity'
+import type { Post } from '@entities/post.entity'
 import type { Product } from '@entities/product.entity'
 import type { RefreshToken } from '@entities/refresh-token.entity'
 import type { User } from '@entities/user.entity'
@@ -234,3 +235,24 @@ export const makePostCategory = (overrides: Partial<PostCategory> = {}): PostCat
     deletedAt: null,
     ...overrides
   }) as PostCategory
+
+export const makePost = (overrides: Partial<Post> = {}): Post =>
+  ({
+    id: 'post-1',
+    title: 'Phân biệt men lam và men rạn',
+    slug: 'phan-biet-men-lam-va-men-ran',
+    excerpt: null,
+    content: 'Men lam là lớp men trong phủ trên hoạ tiết vẽ bằng ô-xít coban.\n\n## Men rạn\n\nMen rạn có vết nứt nhỏ.',
+    coverImageUrl: null,
+    categoryId: 'post-category-1',
+    category: makePostCategory(),
+    status: 'published',
+    publishedAt: new Date('2026-11-20T03:00:00.000Z'),
+    authorId: 'admin-1',
+    author: makeUser({ id: 'admin-1', fullName: 'Quản trị viên', role: 'admin' }),
+    viewCount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+    ...overrides
+  }) as Post

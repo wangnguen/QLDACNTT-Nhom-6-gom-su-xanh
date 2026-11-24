@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ConflictError, NotFoundError } from '@common/errors'
 
+import PostRepository from '@modules/post/post.repository'
 import PostCategoryRepository from '@modules/post-category/post-category.repository'
 import PostCategoryService from '@modules/post-category/post-category.service'
 
@@ -18,19 +19,31 @@ vi.mock('@modules/post-category/post-category.repository', () => ({
   }
 }))
 
+vi.mock('@modules/post/post.repository', () => ({
+  default: {
+    countByCategory: vi.fn(),
+    countInCategory: vi.fn()
+  }
+}))
+
 const repo = vi.mocked(PostCategoryRepository)
+const postRepo = vi.mocked(PostRepository)
 
 beforeEach(() => {
   vi.resetAllMocks()
+  postRepo.countByCategory.mockResolvedValue(new Map())
+  postRepo.countInCategory.mockResolvedValue(0)
 })
 
 describe('PostCategoryService.list', () => {
-  it('trang client chỉ lấy danh mục đang hiện', async () => {
+  it('trang client chỉ lấy danh mục đang hiện, đếm bài đã đăng', async () => {
     repo.findAll.mockResolvedValue([makePostCategory()])
+    postRepo.countByCategory.mockResolvedValue(new Map([['post-category-1', 4]]))
 
     const result = await PostCategoryService.list()
 
     expect(repo.findAll).toHaveBeenCalledWith(true)
+    expect(postRepo.countByCategory).toHaveBeenCalledWith(true)
     expect(result).toEqual([
       {
         id: 'post-category-1',
@@ -38,7 +51,7 @@ describe('PostCategoryService.list', () => {
         slug: 'kien-thuc-gom',
         description: null,
         isActive: true,
-        postCount: 0
+        postCount: 4
       }
     ])
   })
@@ -106,5 +119,15 @@ describe('PostCategoryService.remove', () => {
     await PostCategoryService.remove('post-category-1')
 
     expect(repo.softDelete).toHaveBeenCalledWith('post-category-1')
+  })
+})
+
+describe('PostCategoryService.remove khi còn bài viết', () => {
+  it('không xoá danh mục còn bài viết (kể cả bản nháp)', async () => {
+    repo.findById.mockResolvedValue(makePostCategory())
+    postRepo.countInCategory.mockResolvedValue(3)
+
+    await expect(PostCategoryService.remove('post-category-1')).rejects.toThrow('đang có 3 bài viết')
+    expect(repo.softDelete).not.toHaveBeenCalled()
   })
 })
