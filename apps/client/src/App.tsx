@@ -19,6 +19,8 @@ import ProfilePage from './pages/account/profile'
 import ChangeEmailPage from './pages/account/change-email'
 import ChangePasswordPage from './pages/account/change-password'
 import MyWorkshopsPage from './pages/account/workshops'
+import MyOrdersPage from './pages/account/orders'
+import OrderDetailPage from './pages/account/orders/detail'
 
 import HomePage from './pages/home'
 import ProductsPage from './pages/products'
@@ -180,6 +182,9 @@ function App() {
           <Route index element={<ProfilePage />} />
           <Route path='email' element={<ChangeEmailPage />} />
           <Route path='password' element={<ChangePasswordPage />} />
+          {/* US-15 — đơn hàng của tôi */}
+          <Route path='orders' element={<MyOrdersPage />} />
+          <Route path='orders/:id' element={<OrderDetailPage />} />
           {/* US-13 — lịch workshop của tôi */}
           <Route path='workshops' element={<MyWorkshopsPage />} />
         </Route>

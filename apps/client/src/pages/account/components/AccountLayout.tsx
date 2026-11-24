@@ -1,11 +1,12 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { CalendarDays, KeyRound, LogOut, Mail, UserRound } from 'lucide-react'
+import { CalendarDays, KeyRound, LogOut, Mail, ReceiptText, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@lib/utils'
 import { useAuthStore } from '@stores/authStore'
 
 const NAV_ITEMS = [
   { to: '/account', label: 'Hồ sơ cá nhân', icon: UserRound, end: true },
+  { to: '/account/orders', label: 'Đơn hàng của tôi', icon: ReceiptText, end: false },
   { to: '/account/workshops', label: 'Lịch workshop', icon: CalendarDays, end: false },
   { to: '/account/email', label: 'Đổi email', icon: Mail, end: false },
   { to: '/account/password', label: 'Đổi mật khẩu', icon: KeyRound, end: false }

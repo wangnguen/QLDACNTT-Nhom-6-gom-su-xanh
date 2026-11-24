@@ -1,5 +1,5 @@
 import { http } from '../axios'
-import type { CheckoutRequest, CheckoutResult } from '../types'
+import type { CheckoutRequest, CheckoutResult, MyOrderQuery, OrderDetail, Paginated } from '../types'
 
 // US-14: Đặt hàng từ giỏ hàng — đơn VNPay trả kèm link sang cổng thanh toán
 export async function checkout(payload: CheckoutRequest): Promise<CheckoutResult> {
@@ -13,7 +13,20 @@ export async function pay(id: string): Promise<{ paymentUrl: string }> {
   return data
 }
 
+// US-15: Đơn hàng của tôi — mới đặt lên trước
+export async function listMine(query: MyOrderQuery): Promise<Paginated<OrderDetail>> {
+  const { data } = await http.get<Paginated<OrderDetail>>('/orders', { params: query })
+  return data
+}
+
+export async function get(id: string): Promise<OrderDetail> {
+  const { data } = await http.get<OrderDetail>(`/orders/${id}`)
+  return data
+}
+
 export const ordersService = {
   checkout,
-  pay
+  pay,
+  listMine,
+  get
 }
