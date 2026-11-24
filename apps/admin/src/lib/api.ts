@@ -44,7 +44,10 @@ export type {
   ShipmentBody,
   AdminTransaction,
   AdminTransactionQuery,
-  TransactionSummary
+  TransactionSummary,
+  PostCategoryRef,
+  PostCategoryItem,
+  PostCategoryPayload
 } from './types'
 
 export { authService } from './services/auth.service'
@@ -55,3 +58,4 @@ export { workshopsService } from './services/workshops.service'
 export { registrationsService } from './services/registrations.service'
 export { ordersService } from './services/orders.service'
 export { paymentsService } from './services/payments.service'
+export { postCategoriesService } from './services/post-categories.service'

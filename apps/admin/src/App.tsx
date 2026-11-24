@@ -19,6 +19,7 @@ import OrdersPage from './pages/orders'
 import OrderDetailPage from './pages/orders/detail'
 import ShippingPage from './pages/shipping'
 import PaymentsPage from './pages/payments'
+import PostCategoriesPage from './pages/post-categories'
 import NotFoundPage from './pages/not-found'
 
 function App() {
@@ -79,6 +80,9 @@ function App() {
 
           {/* US-20: Quản lý giao dịch thanh toán */}
           <Route path='/payments' element={<PaymentsPage />} />
+
+          {/* US-21: Quản lý danh mục bài viết */}
+          <Route path='/post-categories' element={<PostCategoriesPage />} />
         </Route>
 
         <Route path='*' element={<NotFoundPage />} />

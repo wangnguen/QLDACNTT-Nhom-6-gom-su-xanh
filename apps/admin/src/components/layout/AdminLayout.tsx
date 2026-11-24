@@ -4,6 +4,7 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardList,
+  FolderKanban,
   FolderTree,
   LayoutDashboard,
   LogOut,
@@ -26,7 +27,8 @@ const NAV_ITEMS = [
   { to: '/workshop-registrations', label: 'Đăng ký workshop', icon: ClipboardList, end: false },
   { to: '/orders', label: 'Đơn hàng', icon: ReceiptText, end: false },
   { to: '/shipping', label: 'Vận chuyển', icon: Truck, end: false },
-  { to: '/payments', label: 'Giao dịch', icon: WalletCards, end: false }
+  { to: '/payments', label: 'Giao dịch', icon: WalletCards, end: false },
+  { to: '/post-categories', label: 'Danh mục bài viết', icon: FolderKanban, end: false }
 ]
 
 // Các module sẽ làm ở sprint sau — hiển thị trước để định hình bố cục

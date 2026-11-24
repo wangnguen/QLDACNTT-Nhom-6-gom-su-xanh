@@ -319,3 +319,23 @@ export interface TransactionSummary {
   pendingRefundCount: number
   failedCount: number
 }
+
+// ─── US-21..US-22: Tin tức / blog ────────────────────────────────────────────
+
+export interface PostCategoryRef {
+  id: string
+  name: string
+  slug: string
+}
+
+export interface PostCategoryItem extends PostCategoryRef {
+  description: string | null
+  isActive: boolean
+  postCount: number
+}
+
+export interface PostCategoryPayload {
+  name: string
+  description: string | null
+  isActive: boolean
+}
