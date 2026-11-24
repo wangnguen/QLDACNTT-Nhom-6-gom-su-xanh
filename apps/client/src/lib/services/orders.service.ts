@@ -24,9 +24,16 @@ export async function get(id: string): Promise<OrderDetail> {
   return data
 }
 
+// US-16: Huỷ đơn còn chờ xác nhận
+export async function cancel(id: string, reason: string | null): Promise<OrderDetail> {
+  const { data } = await http.patch<OrderDetail>(`/orders/${id}/cancel`, { reason })
+  return data
+}
+
 export const ordersService = {
   checkout,
   pay,
   listMine,
-  get
+  get,
+  cancel
 }

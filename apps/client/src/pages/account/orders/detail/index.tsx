@@ -5,6 +5,7 @@ import { cn, formatDateTime, formatPrice } from '@lib/utils'
 import { ORDER_STATUS_LABEL, OrderTimeline, PAYMENT_METHOD_LABEL, PAYMENT_STATUS_LABEL } from '@components/order'
 import { ProductImage } from '@components/product'
 import { ErrorBanner } from '@pages/auth/components'
+import { CancelOrder } from './components/CancelOrder'
 import { useOrderDetailStore } from './store'
 
 const card = 'rounded-2xl border border-clay/60 p-5'
@@ -12,7 +13,7 @@ const card = 'rounded-2xl border border-clay/60 p-5'
 // US-15: Chi tiết đơn hàng — sản phẩm, tiền, người nhận, thanh toán và tiến trình đơn
 export default function OrderDetailPage() {
   const { id = '' } = useParams()
-  const { order, loading, error, paying, fetch, pay } = useOrderDetailStore()
+  const { order, loading, error, paying, cancelling, fetch, pay, cancel } = useOrderDetailStore()
 
   useEffect(() => {
     fetch(id)
@@ -172,6 +173,9 @@ export default function OrderDetailPage() {
         <section className={card} aria-label='Tiến trình đơn hàng'>
           <h3 className='mb-4 text-sm font-bold tracking-wider text-muted uppercase'>Tiến trình</h3>
           <OrderTimeline order={order} />
+          <div className='mt-5 border-t border-clay/50 pt-4 empty:hidden'>
+            <CancelOrder order={order} cancelling={cancelling} onCancel={(reason) => cancel(order, reason)} />
+          </div>
         </section>
       </div>
     </div>
