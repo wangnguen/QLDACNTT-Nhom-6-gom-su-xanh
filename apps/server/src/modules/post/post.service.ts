@@ -1,17 +1,45 @@
-import { POST_NOT_FOUND_MESSAGE, POST_STATUS } from '@common/constants'
+import { POST_NOT_FOUND_MESSAGE, POST_STATUS, RELATED_POSTS_LIMIT } from '@common/constants'
 import { BadRequestError, NotFoundError } from '@common/errors'
-import { Paginated, PostDetail, PostSummary } from '@common/types'
+import { Paginated, PostDetail, PostSummary, PublicPostDetail } from '@common/types'
 import { nextAvailableSlug, slugify } from '@common/utils/slug'
 
 import PostCategoryRepository from '@modules/post-category/post-category.repository'
 
 import { Post } from '@entities/post.entity'
 
-import { AdminPostQuery, CreatePostBody, UpdatePostBody } from './dto'
+import { AdminPostQuery, CreatePostBody, PostQuery, UpdatePostBody } from './dto'
 import { toPostDetail, toPostSummary } from './post.mapper'
 import PostRepository from './post.repository'
 
 class PostService {
+  // US-23: Tin tức — bài đã đăng thuộc danh mục đang hiện, mới đăng lên trước
+  static async list({ category, ...query }: PostQuery): Promise<Paginated<PostSummary>> {
+    const [posts, total] = await PostRepository.findMany({ ...query, categorySlug: category, visibleOnly: true })
+    return { limit: query.limit, offset: query.offset, total_count: total, entries: posts.map(toPostSummary) }
+  }
+
+  // US-23: Đọc bài — bài nháp / chưa tới giờ đăng / danh mục đang ẩn trả 404; mỗi lần mở bài cộng một lượt xem
+  static async getBySlug(slug: string): Promise<PublicPostDetail> {
+    const post = await PostRepository.findVisibleBySlug(slug)
+    if (!post) throw new NotFoundError(POST_NOT_FOUND_MESSAGE)
+
+    const [[related]] = await Promise.all([
+      PostRepository.findMany({
+        visibleOnly: true,
+        categoryId: post.categoryId,
+        excludeId: post.id,
+        limit: RELATED_POSTS_LIMIT,
+        offset: 0
+      }),
+      PostRepository.incrementViews(post.id)
+    ])
+
+    return {
+      ...toPostDetail({ ...post, viewCount: post.viewCount + 1 }),
+      related: related.map(toPostSummary)
+    }
+  }
+
   // US-22: Danh sách bài viết ở trang admin (gồm cả bản nháp)
   static async listForAdmin(query: AdminPostQuery): Promise<Paginated<PostSummary>> {
     const [posts, total] = await PostRepository.findMany(query)

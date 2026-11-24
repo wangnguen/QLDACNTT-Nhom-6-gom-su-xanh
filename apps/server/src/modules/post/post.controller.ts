@@ -1,12 +1,21 @@
 import { Request, Response } from 'express'
 
-import { AdminPostQuerySchema, CreatePostBody, UpdatePostBody } from './dto'
+import { AdminPostQuerySchema, CreatePostBody, PostQuerySchema, UpdatePostBody } from './dto'
 import PostService from './post.service'
 
 const PUBLISHED_MESSAGE = { draft: 'Đã lưu nháp', published: 'Đã đăng bài' }
 
 // Express 5 không cho ghi đè req.query nên controller parse lại (query đã qua validateQuery ở route)
 class PostController {
+  // US-23: Xem tin tức / blog
+  static async list(req: Request, res: Response) {
+    return res.ok(await PostService.list(PostQuerySchema.parse(req.query)))
+  }
+
+  static async getBySlug(req: Request<{ slug: string }>, res: Response) {
+    return res.ok(await PostService.getBySlug(req.params.slug))
+  }
+
   // US-22: Quản lý bài viết (admin)
   static async listForAdmin(req: Request, res: Response) {
     return res.ok(await PostService.listForAdmin(AdminPostQuerySchema.parse(req.query)))

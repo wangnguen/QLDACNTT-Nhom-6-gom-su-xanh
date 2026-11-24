@@ -13,6 +13,7 @@ import OrderRoute from '@modules/order/order.route'
 import AdminPaymentRoute from '@modules/payment/payment.admin.route'
 import PaymentRoute from '@modules/payment/payment.route'
 import AdminPostRoute from '@modules/post/post.admin.route'
+import PostRoute from '@modules/post/post.route'
 import AdminPostCategoryRoute from '@modules/post-category/post-category.admin.route'
 import PostCategoryRoute from '@modules/post-category/post-category.route'
 import AdminProductRoute from '@modules/product/product.admin.route'
@@ -36,6 +37,7 @@ router.use('/cart', AuthenticateMiddleware.authenticate, CartRoute)
 router.use('/orders', AuthenticateMiddleware.authenticate, OrderRoute)
 router.use('/payments', PaymentRoute)
 router.use('/post-categories', PostCategoryRoute)
+router.use('/posts', PostRoute)
 router.use('/workshops', WorkshopRoute)
 router.use('/workshop-registrations', AuthenticateMiddleware.authenticate, WorkshopRegistrationRoute)
 

@@ -13,3 +13,6 @@ export type PostStatus = (typeof POST_STATUS)[keyof typeof POST_STATUS]
 export const WORDS_PER_MINUTE = 200
 
 export const MAX_POST_CONTENT_LENGTH = 50_000
+
+// Số bài liên quan hiện cuối trang bài viết
+export const RELATED_POSTS_LIMIT = 3

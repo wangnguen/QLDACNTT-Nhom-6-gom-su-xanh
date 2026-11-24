@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { AdminPostQuerySchema, CreatePostBodySchema, UpdatePostBodySchema } from '@modules/post/dto'
+import { AdminPostQuerySchema, CreatePostBodySchema, PostQuerySchema, UpdatePostBodySchema } from '@modules/post/dto'
 
 const CATEGORY_ID = 'd4e5f6a7-b8c9-4d0e-8f1a-2b3c4d5e6f70'
 
@@ -51,6 +51,17 @@ describe('AdminPostQuerySchema', () => {
       offset: 0,
       status: 'draft',
       categoryId: CATEGORY_ID
+    })
+  })
+})
+
+describe('PostQuerySchema', () => {
+  it('lọc theo slug danh mục, ô tìm kiếm rỗng thì bỏ qua', () => {
+    expect(PostQuerySchema.parse({ category: 'kien-thuc-gom', search: ' ', limit: '6' })).toEqual({
+      limit: 6,
+      offset: 0,
+      category: 'kien-thuc-gom',
+      search: undefined
     })
   })
 })
