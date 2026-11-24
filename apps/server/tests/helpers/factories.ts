@@ -8,6 +8,7 @@ import type { Order } from '@entities/order.entity'
 import type { PaymentTransaction } from '@entities/payment-transaction.entity'
 import type { PostCategory } from '@entities/post-category.entity'
 import type { Post } from '@entities/post.entity'
+import type { ProductReview } from '@entities/product-review.entity'
 import type { Product } from '@entities/product.entity'
 import type { RefreshToken } from '@entities/refresh-token.entity'
 import type { User } from '@entities/user.entity'
@@ -256,3 +257,21 @@ export const makePost = (overrides: Partial<Post> = {}): Post =>
     deletedAt: null,
     ...overrides
   }) as Post
+
+export const makeReview = (overrides: Partial<ProductReview> = {}): ProductReview =>
+  ({
+    id: 'review-1',
+    productId: 'product-1',
+    userId: 'user-1',
+    orderId: 'order-1',
+    rating: 5,
+    comment: 'Men đẹp, đóng gói cẩn thận',
+    isHidden: false,
+    adminReply: null,
+    repliedAt: null,
+    user: makeUser(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+    ...overrides
+  }) as ProductReview

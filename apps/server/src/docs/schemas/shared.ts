@@ -447,3 +447,32 @@ export const PostDetailSchema = registry.register(
       .meta({ example: null, description: 'Tóm tắt admin nhập (null = tự lấy từ nội dung)' })
   })
 )
+
+// ─── Đánh giá sản phẩm ───────────────────────────────────────────────────────
+
+export const ReviewItemSchema = registry.register(
+  'ReviewItem',
+  z.object({
+    id: z.string().uuid().meta({ example: 'f6a7b8c9-d0e1-4f2a-8b3c-4d5e6f7a8b90' }),
+    rating: z.number().int().min(1).max(5).meta({ example: 5 }),
+    comment: z.string().nullable().meta({ example: 'Men lam rất đẹp, đóng gói cẩn thận, giao nhanh.' }),
+    authorName: z.string().meta({ example: 'Nguyễn Văn An' }),
+    createdAt: z.string().datetime().meta({ example: '2026-11-22T08:00:00.000Z' }),
+    updatedAt: z.string().datetime().meta({ example: '2026-11-22T08:00:00.000Z' }),
+    adminReply: z.string().nullable().meta({ example: 'Cảm ơn anh đã ủng hộ cửa hàng!' }),
+    repliedAt: z.string().datetime().nullable().meta({ example: '2026-11-22T09:00:00.000Z' })
+  })
+)
+
+export const RatingSummarySchema = registry.register(
+  'RatingSummary',
+  z.object({
+    average: z
+      .number()
+      .meta({ example: 4.6, description: 'Điểm trung bình (1 chữ số thập phân), 0 khi chưa có đánh giá' }),
+    count: z.number().int().meta({ example: 12 }),
+    distribution: z
+      .record(z.enum(['1', '2', '3', '4', '5']), z.number().int())
+      .meta({ example: { 1: 0, 2: 0, 3: 1, 4: 3, 5: 8 } })
+  })
+)
