@@ -41,7 +41,10 @@ export type {
   Transaction,
   AdminOrderDetail,
   AdminOrderQuery,
-  ShipmentBody
+  ShipmentBody,
+  AdminTransaction,
+  AdminTransactionQuery,
+  TransactionSummary
 } from './types'
 
 export { authService } from './services/auth.service'
@@ -51,3 +54,4 @@ export { productsService } from './services/products.service'
 export { workshopsService } from './services/workshops.service'
 export { registrationsService } from './services/registrations.service'
 export { ordersService } from './services/orders.service'
+export { paymentsService } from './services/payments.service'
