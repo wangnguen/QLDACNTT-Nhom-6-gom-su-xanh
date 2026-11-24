@@ -24,6 +24,8 @@ import HomePage from './pages/home'
 import ProductsPage from './pages/products'
 import ProductDetailPage from './pages/product-detail'
 import CartPage from './pages/cart'
+import CheckoutPage from './pages/checkout'
+import PaymentResultPage from './pages/payment-result'
 import WorkshopsPage from './pages/workshops'
 import WorkshopDetailPage from './pages/workshop-detail'
 import NotFoundPage from './pages/not-found'
@@ -106,6 +108,26 @@ function App() {
                 <CartPage />
               </AppLayout>
             </ProtectedRoute>
+          }
+        />
+
+        {/* US-14 — đặt hàng cần đăng nhập; trang kết quả nhận khách quay về từ cổng thanh toán */}
+        <Route
+          path='/checkout'
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <CheckoutPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path='/payment/result'
+          element={
+            <AppLayout>
+              <PaymentResultPage />
+            </AppLayout>
           }
         />
 
