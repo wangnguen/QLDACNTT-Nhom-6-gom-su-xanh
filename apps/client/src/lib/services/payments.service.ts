@@ -1,5 +1,5 @@
 import { http } from '../axios'
-import type { PaymentMethodOption, PaymentResult } from '../types'
+import type { MyTransactionQuery, Paginated, PaymentMethodOption, PaymentResult, Transaction } from '../types'
 
 // US-14: Phương thức thanh toán đang nhận
 export async function methods(): Promise<PaymentMethodOption[]> {
@@ -13,7 +13,14 @@ export async function confirmReturn(search: string): Promise<PaymentResult> {
   return data
 }
 
+// US-17: Lịch sử giao dịch của tôi — thanh toán và hoàn tiền, mới nhất lên trước
+export async function listMine(query: MyTransactionQuery): Promise<Paginated<Transaction>> {
+  const { data } = await http.get<Paginated<Transaction>>('/payments', { params: query })
+  return data
+}
+
 export const paymentsService = {
   methods,
-  confirmReturn
+  confirmReturn,
+  listMine
 }

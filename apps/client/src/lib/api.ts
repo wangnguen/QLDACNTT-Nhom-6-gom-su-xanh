@@ -48,7 +48,8 @@ export type {
   TransactionStatus,
   Transaction,
   PaymentResult,
-  MyOrderQuery
+  MyOrderQuery,
+  MyTransactionQuery
 } from './types'
 
 export { authService } from './services/auth.service'
