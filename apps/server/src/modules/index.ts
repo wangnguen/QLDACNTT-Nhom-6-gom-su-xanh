@@ -18,6 +18,7 @@ import AdminPostCategoryRoute from '@modules/post-category/post-category.admin.r
 import PostCategoryRoute from '@modules/post-category/post-category.route'
 import AdminProductRoute from '@modules/product/product.admin.route'
 import ProductRoute from '@modules/product/product.route'
+import ReviewRoute, { productReviewRouter } from '@modules/review/review.route'
 import UserRoute from '@modules/user/user.route'
 import AdminWorkshopRoute from '@modules/workshop/workshop.admin.route'
 import WorkshopRoute from '@modules/workshop/workshop.route'
@@ -32,7 +33,9 @@ router.use('/auth', AuthRoute)
 router.use('/health', HealthRoute)
 router.use('/users', AuthenticateMiddleware.authenticate, UserRoute)
 router.use('/categories', CategoryRoute)
+router.use('/products/:slug/reviews', productReviewRouter)
 router.use('/products', ProductRoute)
+router.use('/reviews', AuthenticateMiddleware.authenticate, ReviewRoute)
 router.use('/cart', AuthenticateMiddleware.authenticate, CartRoute)
 router.use('/orders', AuthenticateMiddleware.authenticate, OrderRoute)
 router.use('/payments', PaymentRoute)
