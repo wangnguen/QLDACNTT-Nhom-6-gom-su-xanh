@@ -362,3 +362,20 @@ export const TransactionSchema = registry.register(
     order: OrderRefSchema
   })
 )
+
+export const AdminOrderSchema = registry.register(
+  'AdminOrder',
+  OrderDetailSchema.extend({
+    customer: z.object({
+      id: z.string().uuid().meta({ example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' }),
+      fullName: z.string().meta({ example: 'Nguyễn Văn An' }),
+      email: z.string().email().meta({ example: 'nguyenvanan@gmail.com' }),
+      phone: z.string().nullable().meta({ example: '0912345678' })
+    })
+  })
+)
+
+export const AdminOrderDetailSchema = registry.register(
+  'AdminOrderDetail',
+  AdminOrderSchema.extend({ transactions: z.array(TransactionSchema) })
+)

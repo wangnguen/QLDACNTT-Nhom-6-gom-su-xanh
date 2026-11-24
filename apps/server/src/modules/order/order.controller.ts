@@ -3,8 +3,19 @@ import { Request, Response } from 'express'
 import { getClientIp } from '@modules/payment/payment.controller'
 import PaymentService from '@modules/payment/payment.service'
 
-import { CancelOrderBody, CreateOrderBody, MyOrderQuerySchema } from './dto'
+import {
+  AdminOrderQuerySchema,
+  CancelOrderBody,
+  CreateOrderBody,
+  MyOrderQuerySchema,
+  UpdateOrderStatusBody
+} from './dto'
 import OrderService from './order.service'
+
+const ADMIN_SUCCESS_MESSAGE: Record<UpdateOrderStatusBody['status'], string> = {
+  confirmed: 'Đã xác nhận đơn hàng',
+  cancelled: 'Đã huỷ đơn hàng'
+}
 
 class OrderController {
   // US-14: Đặt hàng và thanh toán
@@ -36,6 +47,26 @@ class OrderController {
           ? 'Đã huỷ đơn hàng. Cửa hàng sẽ hoàn tiền cho bạn trong 3–5 ngày làm việc'
           : 'Đã huỷ đơn hàng'
     })
+  }
+
+  // US-18: Quản lý đơn hàng (admin)
+  static async listForAdmin(req: Request, res: Response) {
+    const orders = await OrderService.listForAdmin(AdminOrderQuerySchema.parse(req.query))
+    return res.ok(orders)
+  }
+
+  static async countByStatus(_req: Request, res: Response) {
+    return res.ok(await OrderService.countByStatus())
+  }
+
+  static async getForAdmin(req: Request<{ id: string }>, res: Response) {
+    return res.ok(await OrderService.getForAdmin(req.params.id))
+  }
+
+  static async updateStatus(req: Request<{ id: string }>, res: Response) {
+    const body = req.body as UpdateOrderStatusBody
+    const order = await OrderService.updateStatusByAdmin(req.params.id, body)
+    return res.ok(order, { message: ADMIN_SUCCESS_MESSAGE[body.status] })
   }
 
   static async pay(req: Request<{ id: string }>, res: Response) {

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { CancelOrderBodySchema, CreateOrderBodySchema, MyOrderQuerySchema } from '@modules/order/dto'
+import {
+  AdminOrderQuerySchema,
+  CancelOrderBodySchema,
+  CreateOrderBodySchema,
+  MyOrderQuerySchema,
+  UpdateOrderStatusBodySchema
+} from '@modules/order/dto'
 
 const validBody = {
   recipientName: ' Nguyễn Văn An ',
@@ -56,5 +62,48 @@ describe('CancelOrderBodySchema', () => {
 
   it('từ chối lý do quá 255 ký tự', () => {
     expect(CancelOrderBodySchema.safeParse({ reason: 'a'.repeat(256) }).success).toBe(false)
+  })
+})
+
+describe('AdminOrderQuerySchema', () => {
+  it('nhận đủ bộ lọc, ô tìm kiếm rỗng thì bỏ qua', () => {
+    expect(
+      AdminOrderQuerySchema.parse({
+        search: '  ',
+        status: 'pending',
+        paymentStatus: 'paid',
+        paymentMethod: 'vnpay',
+        from: '2026-11-01',
+        to: '2026-11-30'
+      })
+    ).toEqual({
+      limit: 12,
+      offset: 0,
+      search: undefined,
+      status: 'pending',
+      paymentStatus: 'paid',
+      paymentMethod: 'vnpay',
+      from: '2026-11-01',
+      to: '2026-11-30'
+    })
+  })
+
+  it.each([
+    ['ngày sai định dạng', { from: '01/11/2026' }],
+    ['từ ngày sau đến ngày', { from: '2026-12-01', to: '2026-11-30' }],
+    ['tình trạng thanh toán lạ', { paymentStatus: 'partial' }]
+  ])('từ chối khi %s', (_case, query) => {
+    expect(AdminOrderQuerySchema.safeParse(query).success).toBe(false)
+  })
+})
+
+describe('UpdateOrderStatusBodySchema', () => {
+  it.each(['confirmed', 'cancelled'])('nhận trạng thái %s', (status) => {
+    expect(UpdateOrderStatusBodySchema.safeParse({ status }).success).toBe(true)
+  })
+
+  it('giao hàng không đổi ở đây', () => {
+    expect(UpdateOrderStatusBodySchema.safeParse({ status: 'shipping' }).success).toBe(false)
+    expect(UpdateOrderStatusBodySchema.safeParse({ status: 'pending' }).success).toBe(false)
   })
 })

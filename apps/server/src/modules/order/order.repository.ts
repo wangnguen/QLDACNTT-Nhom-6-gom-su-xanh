@@ -1,6 +1,6 @@
-import { In } from 'typeorm'
+import { Brackets, In } from 'typeorm'
 
-import { OrderStatus } from '@common/constants'
+import { OrderStatus, PaymentMethod, PaymentStatus } from '@common/constants'
 
 import { CartItem } from '@entities/cart-item.entity'
 import { OrderItem } from '@entities/order-item.entity'
@@ -44,9 +44,20 @@ export type NewTransactionData = Pick<PaymentTransaction, 'code' | 'userId' | 'm
 export type OrderFilter = {
   userId?: string
   status?: OrderStatus
+  paymentStatus?: PaymentStatus
+  paymentMethod?: PaymentMethod
+  // Mã đơn, tên / số điện thoại người nhận, email tài khoản (trang admin)
+  search?: string
+  // Đặt trong khoảng [placedFrom, placedBefore)
+  placedFrom?: Date
+  placedBefore?: Date
+  // Load kèm tài khoản đặt hàng (trang admin)
+  withCustomer?: boolean
   limit: number
   offset: number
 }
+
+const escapeLike = (value: string) => value.replace(/[\\%_]/g, (char) => `\\${char}`)
 
 export type OrderStatusChange = Partial<
   Pick<Order, 'status' | 'paymentStatus' | 'paidAt' | 'confirmedAt' | 'cancelReason' | 'cancelledBy' | 'cancelledAt'>
@@ -68,8 +79,19 @@ export type CheckoutPlan = {
 }
 
 class OrderRepository {
-  static findById(id: string) {
-    return this.orderRepo.findOne({ where: { id }, relations: { items: true } })
+  static findById(id: string, withCustomer = false) {
+    return this.orderRepo.findOne({ where: { id }, relations: { items: true, user: withCustomer } })
+  }
+
+  // Số đơn theo từng trạng thái (tab đếm ở trang admin); trạng thái chưa có đơn không có trong Map
+  static async countByStatus(): Promise<Map<OrderStatus, number>> {
+    const rows = await this.orderRepo
+      .createQueryBuilder('order')
+      .select('order.status', 'status')
+      .addSelect('COUNT(*)::int', 'count')
+      .groupBy('order.status')
+      .getRawMany<{ status: OrderStatus; count: number }>()
+    return new Map(rows.map((row) => [row.status, row.count]))
   }
 
   // Mới đặt lên trước
@@ -78,6 +100,28 @@ class OrderRepository {
 
     if (filter.userId) query.andWhere('order.userId = :userId', { userId: filter.userId })
     if (filter.status) query.andWhere('order.status = :status', { status: filter.status })
+    if (filter.paymentStatus) {
+      query.andWhere('order.paymentStatus = :paymentStatus', { paymentStatus: filter.paymentStatus })
+    }
+    if (filter.paymentMethod) {
+      query.andWhere('order.paymentMethod = :paymentMethod', { paymentMethod: filter.paymentMethod })
+    }
+    if (filter.placedFrom) query.andWhere('order.createdAt >= :placedFrom', { placedFrom: filter.placedFrom })
+    if (filter.placedBefore) query.andWhere('order.createdAt < :placedBefore', { placedBefore: filter.placedBefore })
+
+    if (filter.withCustomer || filter.search) query.innerJoinAndSelect('order.user', 'user')
+    if (filter.search) {
+      const keyword = `%${escapeLike(filter.search)}%`
+      query.andWhere(
+        new Brackets((where) =>
+          where
+            .where('order.code ILIKE :keyword', { keyword })
+            .orWhere('order.recipientName ILIKE :keyword')
+            .orWhere('order.recipientPhone LIKE :keyword')
+            .orWhere('user.email ILIKE :keyword')
+        )
+      )
+    }
 
     return query
       .orderBy('order.createdAt', 'DESC')

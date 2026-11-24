@@ -1,4 +1,5 @@
 import {
+  ADMIN_CANCELLABLE_STATUSES,
   CUSTOMER_CANCELLABLE_STATUSES,
   FREE_SHIPPING_THRESHOLD,
   ORDER_CANCELLED_BY,
@@ -11,15 +12,18 @@ import {
   SHIPPING_FEE
 } from '@common/constants'
 import { BadRequestError, ConflictError, NotFoundError } from '@common/errors'
-import { CheckoutResult, OrderDetail, Paginated } from '@common/types'
+import { AdminOrder, AdminOrderDetail, CheckoutResult, OrderDetail, Paginated } from '@common/types'
+import { startOfVnDay } from '@common/utils/date'
 import { generateCode } from '@common/utils/random'
 
+import { toTransactionItem } from '@modules/payment/payment.mapper'
+import PaymentRepository from '@modules/payment/payment.repository'
 import PaymentService from '@modules/payment/payment.service'
 
 import { Order } from '@entities/order.entity'
 
-import { CancelOrderBody, CreateOrderBody, MyOrderQuery } from './dto'
-import { toOrderDetail } from './order.mapper'
+import { AdminOrderQuery, CancelOrderBody, CreateOrderBody, MyOrderQuery, UpdateOrderStatusBody } from './dto'
+import { toAdminOrder, toOrderDetail } from './order.mapper'
 import OrderRepository, { CheckoutLine, CheckoutPlan, NewOrderItemData, OrderTransition } from './order.repository'
 
 // Mã đơn hàng: DH + 6 ký tự, vd DH7K3M9Q
@@ -122,6 +126,75 @@ class OrderService {
       }
     })
     return this.reloadAfterChange(order.id, changed)
+  }
+
+  // US-18: Danh sách đơn ở trang admin, kèm tài khoản đặt hàng
+  static async listForAdmin({ from, to, ...query }: AdminOrderQuery): Promise<Paginated<AdminOrder>> {
+    const [orders, total] = await OrderRepository.findMany({
+      ...query,
+      placedFrom: from ? startOfVnDay(from) : undefined,
+      placedBefore: to ? startOfVnDay(to, 1) : undefined,
+      withCustomer: true
+    })
+    return { limit: query.limit, offset: query.offset, total_count: total, entries: orders.map(toAdminOrder) }
+  }
+
+  // US-18: Số đơn theo từng trạng thái (đủ mọi trạng thái, chưa có đơn thì là 0)
+  static async countByStatus(): Promise<Record<OrderStatus, number>> {
+    const counts = await OrderRepository.countByStatus()
+    return Object.fromEntries(Object.values(ORDER_STATUS).map((status) => [status, counts.get(status) ?? 0])) as Record<
+      OrderStatus,
+      number
+    >
+  }
+
+  // US-18: Chi tiết đơn ở trang admin — kèm mọi lượt thanh toán / hoàn tiền
+  static async getForAdmin(id: string): Promise<AdminOrderDetail> {
+    const order = await OrderRepository.findById(id, true)
+    if (!order) throw new NotFoundError(ORDER_NOT_FOUND_MESSAGE)
+
+    const [transactions] = await PaymentRepository.findMany({ orderId: id, limit: 100, offset: 0 })
+    return { ...toAdminOrder(order), transactions: transactions.map((t) => toTransactionItem(t)) }
+  }
+
+  /**
+   * US-18: Cửa hàng xác nhận đơn (đơn VNPay phải thanh toán xong) hoặc huỷ đơn chưa giao, kèm lý do khách thấy.
+   * Huỷ đơn đã thanh toán thì chuyển sang chờ hoàn tiền giống khách tự huỷ.
+   */
+  static async updateStatusByAdmin(
+    id: string,
+    { status, cancelReason }: UpdateOrderStatusBody
+  ): Promise<AdminOrderDetail> {
+    const order = await OrderRepository.findById(id)
+    if (!order) throw new NotFoundError(ORDER_NOT_FOUND_MESSAGE)
+
+    if (status === ORDER_STATUS.CANCELLED) {
+      this.ensureStatus(order, ADMIN_CANCELLABLE_STATUSES, 'huỷ')
+      await this.cancel(order, ADMIN_CANCELLABLE_STATUSES, ORDER_CANCELLED_BY.ADMIN, cancelReason ?? null)
+      return this.getForAdmin(id)
+    }
+
+    this.ensureStatus(order, [ORDER_STATUS.PENDING], 'xác nhận')
+    const ensurePaid = (target: Order) => {
+      if (target.paymentMethod === PAYMENT_METHOD.VNPAY && target.paymentStatus !== PAYMENT_STATUS.PAID) {
+        throw new BadRequestError('Đơn thanh toán trực tuyến chưa được thanh toán, chưa thể xác nhận')
+      }
+    }
+    ensurePaid(order)
+    const changed = await OrderRepository.transition(id, [ORDER_STATUS.PENDING], (locked) => {
+      ensurePaid(locked)
+      return { change: { status: ORDER_STATUS.CONFIRMED, confirmedAt: new Date() } }
+    })
+    if (!changed) throw new ConflictError(ORDER_CHANGED_MESSAGE)
+    return this.getForAdmin(id)
+  }
+
+  static ensureStatus(order: Order, allowed: OrderStatus[], action: string) {
+    if (allowed.includes(order.status)) return
+    if (order.status === ORDER_STATUS.CONFIRMED && action === 'xác nhận') {
+      throw new BadRequestError('Đơn hàng đã được xác nhận trước đó')
+    }
+    throw new BadRequestError(`Đơn hàng đang ở trạng thái "${ORDER_STATUS_LABEL[order.status]}", không thể ${action}`)
   }
 
   // Trạng thái có thể vừa bị bên kia đổi → báo tải lại thay vì ghi đè

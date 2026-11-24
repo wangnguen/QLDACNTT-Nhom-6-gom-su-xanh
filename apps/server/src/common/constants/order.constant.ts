@@ -50,6 +50,12 @@ export const PAYMENT_EXPIRE_MINUTES = 15
 // Khách tự huỷ được khi đơn còn chờ xác nhận; đơn đã xác nhận phải liên hệ cửa hàng
 export const CUSTOMER_CANCELLABLE_STATUSES: OrderStatus[] = [ORDER_STATUS.PENDING]
 
+// Cửa hàng huỷ được đơn chưa giao cho đơn vị vận chuyển
+export const ADMIN_CANCELLABLE_STATUSES: OrderStatus[] = [ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED]
+
+// Trạng thái admin chuyển sang ở trang quản lý đơn hàng (giao hàng xử lý ở trang vận chuyển)
+export const ADMIN_ORDER_ACTIONS = [ORDER_STATUS.CONFIRMED, ORDER_STATUS.CANCELLED] as const
+
 export const ORDER_NOT_FOUND_MESSAGE = 'Không tìm thấy đơn hàng'
 
 // ─── Giao dịch thanh toán ─────────────────────────────────────────────────────

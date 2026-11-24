@@ -1,5 +1,5 @@
 import { CUSTOMER_CANCELLABLE_STATUSES, ORDER_STATUS, PAYMENT_METHOD, PAYMENT_STATUS } from '@common/constants'
-import { OrderDetail, OrderLine, OrderRef } from '@common/types'
+import { AdminOrder, OrderDetail, OrderLine, OrderRef } from '@common/types'
 
 import { OrderItem } from '@entities/order-item.entity'
 import { Order } from '@entities/order.entity'
@@ -51,6 +51,17 @@ export const toOrderDetail = (order: Order): OrderDetail => {
     canCancel: CUSTOMER_CANCELLABLE_STATUSES.includes(order.status)
   }
 }
+
+// `order.user` phải được load kèm
+export const toAdminOrder = (order: Order): AdminOrder => ({
+  ...toOrderDetail(order),
+  customer: {
+    id: order.user.id,
+    fullName: order.user.fullName,
+    email: order.user.email,
+    phone: order.user.phone
+  }
+})
 
 export const toOrderRef = (order: Order): OrderRef => ({
   id: order.id,

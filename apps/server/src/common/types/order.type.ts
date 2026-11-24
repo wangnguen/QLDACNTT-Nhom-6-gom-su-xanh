@@ -71,6 +71,23 @@ export type TransactionItem = {
   order: OrderRef
 }
 
+export type OrderCustomer = {
+  id: string
+  fullName: string
+  email: string
+  phone: string | null
+}
+
+// Đơn hàng ở trang admin: kèm tài khoản đặt hàng
+export type AdminOrder = OrderDetail & {
+  customer: OrderCustomer
+}
+
+export type AdminOrderDetail = AdminOrder & {
+  // Mọi lượt thanh toán / hoàn tiền của đơn, mới nhất lên trước
+  transactions: TransactionItem[]
+}
+
 export type CheckoutResult = {
   order: OrderDetail
   // Link chuyển sang cổng thanh toán (đơn thanh toán trực tuyến), null với COD

@@ -4,24 +4,27 @@ import { BadRequestError, ConflictError, NotFoundError } from '@common/errors'
 
 import OrderRepository, { CheckoutLine, CheckoutPlan, OrderTransition } from '@modules/order/order.repository'
 import OrderService, { calculateShippingFee } from '@modules/order/order.service'
+import PaymentRepository from '@modules/payment/payment.repository'
 
 import type { Order } from '@entities/order.entity'
 import type { PaymentTransaction } from '@entities/payment-transaction.entity'
 
-import { makeOrder, makeOrderItem, makeProduct, makeTransaction } from '../../helpers/factories'
+import { makeOrder, makeOrderItem, makeProduct, makeTransaction, makeUser } from '../../helpers/factories'
 
 vi.mock('@modules/order/order.repository', () => ({
   default: {
     createFromCart: vi.fn(),
     findById: vi.fn(),
     findMany: vi.fn(),
-    transition: vi.fn()
+    transition: vi.fn(),
+    countByStatus: vi.fn()
   }
 }))
 
-vi.mock('@modules/payment/payment.repository', () => ({ default: {} }))
+vi.mock('@modules/payment/payment.repository', () => ({ default: { findMany: vi.fn() } }))
 
 const repo = vi.mocked(OrderRepository)
+const paymentRepo = vi.mocked(PaymentRepository)
 
 const body = {
   recipientName: 'Nguyễn Văn An',
@@ -246,5 +249,137 @@ describe('OrderService.cancelMine', () => {
     repo.transition.mockResolvedValue(false)
 
     await expect(OrderService.cancelMine('user-1', 'order-1', { reason: null })).rejects.toThrow(ConflictError)
+  })
+})
+
+describe('OrderService (admin)', () => {
+  const withCustomer = (overrides: Partial<Order> = {}) => makeOrder({ user: makeUser(), ...overrides })
+
+  beforeEach(() => {
+    paymentRepo.findMany.mockResolvedValue([[makeTransaction({ status: 'success' })], 1])
+  })
+
+  it('listForAdmin: đổi ngày lọc sang mốc giờ Việt Nam, kèm tài khoản đặt hàng', async () => {
+    repo.findMany.mockResolvedValue([[withCustomer()], 1])
+
+    const result = await OrderService.listForAdmin({
+      limit: 10,
+      offset: 0,
+      search: 'DH7K',
+      from: '2026-11-20',
+      to: '2026-11-21'
+    })
+
+    expect(repo.findMany).toHaveBeenCalledWith({
+      limit: 10,
+      offset: 0,
+      search: 'DH7K',
+      placedFrom: new Date('2026-11-19T17:00:00.000Z'),
+      placedBefore: new Date('2026-11-21T17:00:00.000Z'),
+      withCustomer: true
+    })
+    expect(result.entries[0].customer).toEqual({
+      id: 'user-1',
+      fullName: 'Nguyễn Văn An',
+      email: 'an.nguyen@gmail.com',
+      phone: '0912345678'
+    })
+  })
+
+  it('countByStatus: đủ mọi trạng thái, chưa có đơn thì là 0', async () => {
+    repo.countByStatus.mockResolvedValue(
+      new Map([
+        ['pending', 3],
+        ['delivered', 7]
+      ])
+    )
+
+    await expect(OrderService.countByStatus()).resolves.toEqual({
+      pending: 3,
+      confirmed: 0,
+      shipping: 0,
+      delivered: 7,
+      cancelled: 0,
+      returned: 0
+    })
+  })
+
+  it('getForAdmin: kèm các lượt thanh toán của đơn', async () => {
+    repo.findById.mockResolvedValue(withCustomer())
+
+    const result = await OrderService.getForAdmin('order-1')
+
+    expect(repo.findById).toHaveBeenCalledWith('order-1', true)
+    expect(paymentRepo.findMany).toHaveBeenCalledWith({ orderId: 'order-1', limit: 100, offset: 0 })
+    expect(result.transactions).toHaveLength(1)
+  })
+
+  describe('updateStatusByAdmin', () => {
+    const mockTransition = (locked: Order) => {
+      let transition: OrderTransition | undefined
+      repo.transition.mockImplementation(async (_id, from, build) => {
+        if (!from.includes(locked.status)) return false
+        transition = build(locked)
+        return true
+      })
+      return () => transition!
+    }
+
+    it('xác nhận đơn COD chờ xác nhận', async () => {
+      const order = withCustomer({ paymentMethod: 'cod' })
+      repo.findById.mockResolvedValue(order)
+      const getTransition = mockTransition(order)
+
+      await OrderService.updateStatusByAdmin('order-1', { status: 'confirmed', cancelReason: undefined })
+
+      expect(getTransition()).toEqual({ change: { status: 'confirmed', confirmedAt: expect.any(Date) } })
+    })
+
+    it('xác nhận đơn VNPay đã thanh toán', async () => {
+      const order = withCustomer({ paymentStatus: 'paid' })
+      repo.findById.mockResolvedValue(order)
+      mockTransition(order)
+
+      await expect(
+        OrderService.updateStatusByAdmin('order-1', { status: 'confirmed', cancelReason: undefined })
+      ).resolves.toBeDefined()
+    })
+
+    it('huỷ đơn đã xác nhận: ghi lý do, người huỷ là cửa hàng, trả lại tồn kho', async () => {
+      const order = withCustomer({ status: 'confirmed', paymentMethod: 'cod' })
+      repo.findById.mockResolvedValue(order)
+      const getTransition = mockTransition(order)
+
+      await OrderService.updateStatusByAdmin('order-1', { status: 'cancelled', cancelReason: 'Hết hàng' })
+
+      expect(repo.transition).toHaveBeenCalledWith('order-1', ['pending', 'confirmed'], expect.any(Function))
+      expect(getTransition()).toMatchObject({
+        change: { status: 'cancelled', cancelReason: 'Hết hàng', cancelledBy: 'admin' },
+        restock: true,
+        transactions: []
+      })
+    })
+
+    it.each([
+      ['xác nhận đơn VNPay chưa thanh toán', withCustomer(), 'confirmed', 'chưa được thanh toán'],
+      ['xác nhận lại đơn đã xác nhận', withCustomer({ status: 'confirmed' }), 'confirmed', 'đã được xác nhận trước đó'],
+      ['huỷ đơn đang giao', withCustomer({ status: 'shipping' }), 'cancelled', 'đang giao'],
+      ['huỷ đơn đã giao', withCustomer({ status: 'delivered' }), 'cancelled', 'đã giao']
+    ] as const)('không cho %s', async (_case, order, status, message) => {
+      repo.findById.mockResolvedValue(order)
+
+      await expect(OrderService.updateStatusByAdmin('order-1', { status, cancelReason: undefined })).rejects.toThrow(
+        message
+      )
+      expect(repo.transition).not.toHaveBeenCalled()
+    })
+
+    it('không tìm thấy đơn', async () => {
+      repo.findById.mockResolvedValue(null)
+
+      await expect(
+        OrderService.updateStatusByAdmin('order-1', { status: 'confirmed', cancelReason: undefined })
+      ).rejects.toThrow(NotFoundError)
+    })
   })
 })

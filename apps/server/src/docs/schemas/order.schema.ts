@@ -2,12 +2,22 @@ import { z } from 'zod/v4'
 
 import { registry } from '@docs/registry'
 
+import { ORDER_STATUS } from '@common/constants'
 import { idParamSchema } from '@common/validators'
 
-import { CancelOrderBodySchema, CreateOrderBodySchema, MyOrderQuerySchema } from '@modules/order/dto'
+import {
+  AdminOrderQuerySchema,
+  CancelOrderBodySchema,
+  CreateOrderBodySchema,
+  MyOrderQuerySchema,
+  UpdateOrderStatusBodySchema
+} from '@modules/order/dto'
 
 import {
+  AdminOrderDetailSchema,
+  AdminOrderSchema,
   OrderDetailSchema,
+  forbiddenResponse,
   badRequestResponse,
   conflictResponse,
   jsonBody,
@@ -167,6 +177,108 @@ registry.registerPath({
     },
     400: badRequestResponse('Đơn hàng đã được xác nhận / không còn huỷ được'),
     401: unauthorized,
+    404: notFoundResponse('Không tìm thấy đơn hàng'),
+    409: conflictResponse('Trạng thái đơn hàng vừa thay đổi'),
+    422: validationErrorResponse()
+  }
+})
+
+// ─── US-18: Quản lý đơn hàng (admin) ─────────────────────────────────────────
+
+const ADMIN_TAG = 'Admin - Đơn hàng (US-18)'
+
+const adminErrors = {
+  401: unauthorizedResponse('Thiếu hoặc sai access token'),
+  403: forbiddenResponse('Bạn không có quyền truy cập')
+}
+
+registry.registerPath({
+  method: 'get',
+  path: '/admin/orders',
+  tags: [ADMIN_TAG],
+  summary: 'Danh sách đơn hàng',
+  description: `Mới đặt lên trước, kèm tài khoản đặt hàng. Phân trang bằng \`limit\`/\`offset\`.
+
+- \`search\`: mã đơn, tên / số điện thoại người nhận, email tài khoản
+- \`status\`, \`paymentStatus\`, \`paymentMethod\`
+- \`from\`, \`to\`: ngày đặt (YYYY-MM-DD, giờ Việt Nam, tính cả hai ngày)`,
+  security: [{ bearerAuth: [] }],
+  request: { query: AdminOrderQuerySchema },
+  responses: {
+    200: {
+      description: 'Danh sách đơn hàng',
+      content: { 'application/json': { schema: paginatedWrapper(AdminOrderSchema, '/admin/orders') } }
+    },
+    ...adminErrors,
+    422: validationErrorResponse()
+  }
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/admin/orders/status-counts',
+  tags: [ADMIN_TAG],
+  summary: 'Số đơn theo từng trạng thái',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: 'Số đơn của mọi trạng thái',
+      content: {
+        'application/json': {
+          schema: successWrapper(
+            z.record(z.enum(ORDER_STATUS), z.number().int()).meta({
+              example: { pending: 4, confirmed: 2, shipping: 3, delivered: 18, cancelled: 1, returned: 0 }
+            }),
+            '/admin/orders/status-counts'
+          )
+        }
+      }
+    },
+    ...adminErrors
+  }
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/admin/orders/{id}',
+  tags: [ADMIN_TAG],
+  summary: 'Chi tiết đơn hàng',
+  description: 'Kèm tài khoản đặt hàng và mọi lượt thanh toán / hoàn tiền của đơn.',
+  security: [{ bearerAuth: [] }],
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: 'Chi tiết đơn hàng',
+      content: { 'application/json': { schema: successWrapper(AdminOrderDetailSchema, '/admin/orders/{id}') } }
+    },
+    ...adminErrors,
+    404: notFoundResponse('Không tìm thấy đơn hàng'),
+    422: validationErrorResponse('ID không hợp lệ')
+  }
+})
+
+registry.registerPath({
+  method: 'patch',
+  path: '/admin/orders/{id}/status',
+  tags: [ADMIN_TAG],
+  summary: 'Xác nhận / huỷ đơn hàng',
+  description: `- \`confirmed\`: từ \`pending\`; đơn VNPay phải thanh toán xong
+- \`cancelled\`: từ \`pending\` hoặc \`confirmed\`, kèm \`cancelReason\` (khách sẽ thấy); trả lại tồn kho, đơn đã thanh toán chuyển sang chờ hoàn tiền
+
+Giao hàng (đang giao / đã giao / hoàn hàng) xử lý ở API vận chuyển.`,
+  security: [{ bearerAuth: [] }],
+  request: { params: idParamSchema, ...jsonBody(UpdateOrderStatusBodySchema) },
+  responses: {
+    200: {
+      description: 'Đã cập nhật',
+      content: {
+        'application/json': {
+          schema: successWrapper(AdminOrderDetailSchema, '/admin/orders/{id}/status', 200, 'Đã xác nhận đơn hàng')
+        }
+      }
+    },
+    400: badRequestResponse('Không đổi được trạng thái / đơn VNPay chưa thanh toán'),
+    ...adminErrors,
     404: notFoundResponse('Không tìm thấy đơn hàng'),
     409: conflictResponse('Trạng thái đơn hàng vừa thay đổi'),
     422: validationErrorResponse()
