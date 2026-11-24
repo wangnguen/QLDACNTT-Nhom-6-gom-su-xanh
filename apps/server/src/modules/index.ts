@@ -10,6 +10,7 @@ import CategoryRoute from '@modules/category/category.route'
 import HealthRoute from '@modules/health/health.route'
 import AdminOrderRoute from '@modules/order/order.admin.route'
 import OrderRoute from '@modules/order/order.route'
+import AdminPaymentRoute from '@modules/payment/payment.admin.route'
 import PaymentRoute from '@modules/payment/payment.route'
 import AdminProductRoute from '@modules/product/product.admin.route'
 import ProductRoute from '@modules/product/product.route'
@@ -37,6 +38,7 @@ router.use('/workshop-registrations', AuthenticateMiddleware.authenticate, Works
 router.use('/admin/categories', ...adminOnly, AdminCategoryRoute)
 router.use('/admin/products', ...adminOnly, AdminProductRoute)
 router.use('/admin/orders', ...adminOnly, AdminOrderRoute)
+router.use('/admin/payments', ...adminOnly, AdminPaymentRoute)
 router.use('/admin/workshops', ...adminOnly, AdminWorkshopRoute)
 router.use('/admin/workshop-registrations', ...adminOnly, AdminWorkshopRegistrationRoute)
 

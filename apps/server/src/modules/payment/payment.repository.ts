@@ -1,4 +1,7 @@
+import { Brackets } from 'typeorm'
+
 import {
+  PAYMENT_STATUS,
   PaymentMethod,
   TRANSACTION_STATUS,
   TRANSACTION_TYPE,
@@ -24,9 +27,25 @@ export type TransactionFilter = {
   type?: TransactionType
   status?: TransactionStatus
   method?: PaymentMethod
+  // Mã giao dịch, mã giao dịch VNPay, mã đơn, email khách (trang admin)
+  search?: string
+  // Tạo trong khoảng [createdFrom, createdBefore)
+  createdFrom?: Date
+  createdBefore?: Date
+  // Load kèm tài khoản của khách (trang admin)
+  withCustomer?: boolean
   limit: number
   offset: number
 }
+
+export type SummaryRow = {
+  type: TransactionType
+  status: TransactionStatus
+  count: number
+  amount: number
+}
+
+const escapeLike = (value: string) => value.replace(/[\\%_]/g, (char) => `\\${char}`)
 
 export type OrderPaymentChange = {
   change: Partial<Pick<Order, 'paymentStatus' | 'paidAt'>>
@@ -54,6 +73,24 @@ class PaymentRepository {
     if (filter.type) query.andWhere('transaction.type = :type', { type: filter.type })
     if (filter.status) query.andWhere('transaction.status = :status', { status: filter.status })
     if (filter.method) query.andWhere('transaction.method = :method', { method: filter.method })
+    if (filter.createdFrom) query.andWhere('transaction.createdAt >= :createdFrom', { createdFrom: filter.createdFrom })
+    if (filter.createdBefore) {
+      query.andWhere('transaction.createdAt < :createdBefore', { createdBefore: filter.createdBefore })
+    }
+
+    if (filter.withCustomer || filter.search) query.innerJoinAndSelect('transaction.user', 'user')
+    if (filter.search) {
+      const keyword = `%${escapeLike(filter.search)}%`
+      query.andWhere(
+        new Brackets((where) =>
+          where
+            .where('transaction.code ILIKE :keyword', { keyword })
+            .orWhere('transaction.gatewayTransactionNo LIKE :keyword')
+            .orWhere('order.code ILIKE :keyword')
+            .orWhere('user.email ILIKE :keyword')
+        )
+      )
+    }
 
     return query
       .orderBy('transaction.createdAt', 'DESC')
@@ -61,6 +98,71 @@ class PaymentRepository {
       .skip(filter.offset)
       .take(filter.limit)
       .getManyAndCount()
+  }
+
+  static findByIdWithCustomer(id: string) {
+    return this.transactionRepo.findOne({ where: { id }, relations: { order: true, user: true } })
+  }
+
+  // Số lượng và tổng tiền theo loại + trạng thái, giao dịch tạo trong khoảng [from, before)
+  static summarize(from?: Date, before?: Date): Promise<SummaryRow[]> {
+    const query = this.transactionRepo
+      .createQueryBuilder('transaction')
+      .select('transaction.type', 'type')
+      .addSelect('transaction.status', 'status')
+      .addSelect('COUNT(*)::int', 'count')
+      .addSelect('COALESCE(SUM(transaction.amount), 0)::bigint', 'amount')
+      .groupBy('transaction.type')
+      .addGroupBy('transaction.status')
+    if (from) query.andWhere('transaction.createdAt >= :from', { from })
+    if (before) query.andWhere('transaction.createdAt < :before', { before })
+    return query
+      .getRawMany<{ type: TransactionType; status: TransactionStatus; count: number; amount: string }>()
+      .then((rows) => rows.map((row) => ({ ...row, amount: Number(row.amount) })))
+  }
+
+  // Yêu cầu hoàn tiền đang chờ (mọi thời điểm)
+  static async pendingRefunds(): Promise<{ count: number; amount: number }> {
+    const row = await this.transactionRepo
+      .createQueryBuilder('transaction')
+      .select('COUNT(*)::int', 'count')
+      .addSelect('COALESCE(SUM(transaction.amount), 0)::bigint', 'amount')
+      .where('transaction.type = :type', { type: TRANSACTION_TYPE.REFUND })
+      .andWhere('transaction.status = :status', { status: TRANSACTION_STATUS.PENDING })
+      .getRawOne<{ count: number; amount: string }>()
+    return { count: row?.count ?? 0, amount: Number(row?.amount ?? 0) }
+  }
+
+  /**
+   * US-20: Cửa hàng xác nhận đã hoàn tiền — chỉ khi giao dịch hoàn tiền còn `pending`; đơn hết yêu cầu hoàn
+   * đang chờ thì chuyển sang "đã hoàn tiền". Trả về false nếu giao dịch đã được xử lý trước đó.
+   */
+  static completeRefund(
+    transaction: Pick<PaymentTransaction, 'id' | 'orderId'>,
+    change: Pick<PaymentTransaction, 'completedAt' | 'note' | 'gatewayTransactionNo'>
+  ): Promise<boolean> {
+    return AppDataSource.getDataSource().transaction(async (manager) => {
+      const orderRepo = manager.getRepository(Order)
+      await orderRepo.findOne({ where: { id: transaction.orderId }, lock: { mode: 'pessimistic_write' } })
+
+      const repo = manager.getRepository(PaymentTransaction)
+      const result = await repo.update(
+        { id: transaction.id, type: TRANSACTION_TYPE.REFUND, status: TRANSACTION_STATUS.PENDING },
+        { ...change, status: TRANSACTION_STATUS.SUCCESS }
+      )
+      if ((result.affected ?? 0) === 0) return false
+
+      const stillPending = await repo.exists({
+        where: { orderId: transaction.orderId, type: TRANSACTION_TYPE.REFUND, status: TRANSACTION_STATUS.PENDING }
+      })
+      if (!stillPending) {
+        await orderRepo.update(
+          { id: transaction.orderId, paymentStatus: PAYMENT_STATUS.REFUND_PENDING },
+          { paymentStatus: PAYMENT_STATUS.REFUNDED }
+        )
+      }
+      return true
+    })
   }
 
   // Lượt thanh toán mới thay cho các lượt cũ còn dang dở của đơn (link cũ không dùng nữa)

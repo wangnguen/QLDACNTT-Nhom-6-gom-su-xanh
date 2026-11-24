@@ -1,6 +1,6 @@
 import { PAYMENT_METHOD, TRANSACTION_STATUS, TRANSACTION_TYPE } from '@common/constants'
 import { describeResponseCode } from '@common/services/vnpay.service'
-import { TransactionItem } from '@common/types'
+import { AdminTransactionItem, TransactionItem } from '@common/types'
 
 import { toOrderRef } from '@modules/order/order.mapper'
 
@@ -40,4 +40,15 @@ export const toTransactionItem = (transaction: PaymentTransaction, now = new Dat
   createdAt: transaction.createdAt,
   completedAt: transaction.completedAt,
   order: toOrderRef(transaction.order)
+})
+
+// `transaction.order` và `transaction.user` phải được load kèm
+export const toAdminTransactionItem = (transaction: PaymentTransaction, now = new Date()): AdminTransactionItem => ({
+  ...toTransactionItem(transaction, now),
+  customer: {
+    id: transaction.user.id,
+    fullName: transaction.user.fullName,
+    email: transaction.user.email,
+    phone: transaction.user.phone
+  }
 })

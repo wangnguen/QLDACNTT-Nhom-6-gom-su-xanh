@@ -8,10 +8,18 @@ import {
   TRANSACTION_STATUS,
   TRANSACTION_TYPE
 } from '@common/constants'
-import { BadRequestError, NotFoundError } from '@common/errors'
+import { BadRequestError, ConflictError, NotFoundError } from '@common/errors'
 import { VnpayService } from '@common/services'
 import { VnpayResult } from '@common/services/vnpay.service'
-import { Paginated, PaymentMethodOption, PaymentResult, TransactionItem } from '@common/types'
+import {
+  AdminTransactionItem,
+  Paginated,
+  PaymentMethodOption,
+  PaymentResult,
+  TransactionItem,
+  TransactionSummary
+} from '@common/types'
+import { startOfVnDay } from '@common/utils/date'
 import { generateCode } from '@common/utils/random'
 
 import { canPayOnline, toOrderDetail } from '@modules/order/order.mapper'
@@ -20,8 +28,8 @@ import OrderRepository, { NewTransactionData } from '@modules/order/order.reposi
 import { Order } from '@entities/order.entity'
 import { PaymentTransaction } from '@entities/payment-transaction.entity'
 
-import { MyTransactionQuery } from './dto'
-import { toTransactionItem } from './payment.mapper'
+import { AdminTransactionQuery, CompleteRefundBody, MyTransactionQuery, TransactionSummaryQuery } from './dto'
+import { toAdminTransactionItem, toTransactionItem } from './payment.mapper'
 import PaymentRepository, { OrderPaymentChange, TransactionResultChange } from './payment.repository'
 
 // Mã giao dịch: TT + 8 ký tự, vd TT7K3M9QX2 (dùng làm vnp_TxnRef); giao dịch hoàn tiền: HT + 8 ký tự
@@ -117,6 +125,63 @@ class PaymentService {
       total_count: total,
       entries: transactions.map((t) => toTransactionItem(t))
     }
+  }
+
+  // US-20: Danh sách giao dịch ở trang admin, kèm tài khoản khách
+  static async listForAdmin({ from, to, ...query }: AdminTransactionQuery): Promise<Paginated<AdminTransactionItem>> {
+    const [transactions, total] = await PaymentRepository.findMany({
+      ...query,
+      createdFrom: from ? startOfVnDay(from) : undefined,
+      createdBefore: to ? startOfVnDay(to, 1) : undefined,
+      withCustomer: true
+    })
+    return {
+      limit: query.limit,
+      offset: query.offset,
+      total_count: total,
+      entries: transactions.map((t) => toAdminTransactionItem(t))
+    }
+  }
+
+  // US-20: Tổng tiền đã nhận / đã hoàn trong khoảng ngày; yêu cầu hoàn đang chờ tính mọi thời điểm
+  static async summarize({ from, to }: TransactionSummaryQuery): Promise<TransactionSummary> {
+    const [rows, pending] = await Promise.all([
+      PaymentRepository.summarize(from ? startOfVnDay(from) : undefined, to ? startOfVnDay(to, 1) : undefined),
+      PaymentRepository.pendingRefunds()
+    ])
+    const pick = (type: string, status: string) => rows.find((row) => row.type === type && row.status === status)
+    const received = pick(TRANSACTION_TYPE.PAYMENT, TRANSACTION_STATUS.SUCCESS)
+    const refunded = pick(TRANSACTION_TYPE.REFUND, TRANSACTION_STATUS.SUCCESS)
+    return {
+      receivedAmount: received?.amount ?? 0,
+      receivedCount: received?.count ?? 0,
+      refundedAmount: refunded?.amount ?? 0,
+      refundedCount: refunded?.count ?? 0,
+      pendingRefundAmount: pending.amount,
+      pendingRefundCount: pending.count,
+      failedCount: rows
+        .filter((row) => row.status === TRANSACTION_STATUS.FAILED)
+        .reduce((sum, row) => sum + row.count, 0)
+    }
+  }
+
+  // US-20: Cửa hàng xác nhận đã hoàn tiền cho khách (chuyển khoản / hoàn qua VNPay ngoài hệ thống)
+  static async completeRefund(id: string, { referenceNo, note }: CompleteRefundBody): Promise<AdminTransactionItem> {
+    const transaction = await PaymentRepository.findByIdWithCustomer(id)
+    if (!transaction) throw new NotFoundError(TRANSACTION_NOT_FOUND_MESSAGE)
+    if (transaction.type !== TRANSACTION_TYPE.REFUND) throw new BadRequestError('Đây không phải giao dịch hoàn tiền')
+    if (transaction.status !== TRANSACTION_STATUS.PENDING)
+      throw new BadRequestError('Giao dịch hoàn tiền đã được xử lý')
+
+    const completed = await PaymentRepository.completeRefund(transaction, {
+      completedAt: new Date(),
+      gatewayTransactionNo: referenceNo,
+      note: note ?? transaction.note
+    })
+    if (!completed) throw new ConflictError('Giao dịch vừa được xử lý, vui lòng tải lại trang')
+
+    const updated = await PaymentRepository.findByIdWithCustomer(id)
+    return toAdminTransactionItem(updated!)
   }
 
   // US-14: Trang kết quả thanh toán — trình duyệt của khách quay về từ cổng thanh toán

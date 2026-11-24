@@ -96,6 +96,25 @@ export type AdminOrderDetail = AdminOrder & {
   transactions: TransactionItem[]
 }
 
+// Giao dịch ở trang admin: kèm tài khoản của khách
+export type AdminTransactionItem = TransactionItem & {
+  customer: OrderCustomer
+}
+
+// Tổng hợp giao dịch trong khoảng thời gian (trang admin)
+export type TransactionSummary = {
+  // Tổng tiền khách đã trả thành công (VNPay + COD)
+  receivedAmount: number
+  receivedCount: number
+  // Tổng tiền đã hoàn cho khách
+  refundedAmount: number
+  refundedCount: number
+  // Yêu cầu hoàn tiền đang chờ xử lý (không giới hạn thời gian)
+  pendingRefundAmount: number
+  pendingRefundCount: number
+  failedCount: number
+}
+
 export type CheckoutResult = {
   order: OrderDetail
   // Link chuyển sang cổng thanh toán (đơn thanh toán trực tuyến), null với COD

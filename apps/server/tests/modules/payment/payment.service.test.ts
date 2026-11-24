@@ -9,7 +9,7 @@ import PaymentService from '@modules/payment/payment.service'
 
 import type { PaymentTransaction } from '@entities/payment-transaction.entity'
 
-import { makeOrder, makeTransaction } from '../../helpers/factories'
+import { makeOrder, makeTransaction, makeUser } from '../../helpers/factories'
 
 vi.mock('@modules/order/order.repository', () => ({
   default: {
@@ -23,6 +23,10 @@ vi.mock('@modules/payment/payment.repository', () => ({
     findByCode: vi.fn(),
     findById: vi.fn(),
     findMany: vi.fn(),
+    findByIdWithCustomer: vi.fn(),
+    summarize: vi.fn(),
+    pendingRefunds: vi.fn(),
+    completeRefund: vi.fn(),
     createPayment: vi.fn(),
     applyGatewayResult: vi.fn()
   }
@@ -225,5 +229,94 @@ describe('PaymentService.listMine', () => {
       'Đã hoàn tiền'
     ])
     expect(result.entries[0].order).toEqual({ id: 'order-1', code: 'DH7K3M9Q', status: 'pending', total: 930000 })
+  })
+})
+
+describe('PaymentService (admin)', () => {
+  const refund = (overrides = {}) =>
+    makeTransaction({
+      id: 'refund-1',
+      code: 'HT7K3M9QX2',
+      type: 'refund',
+      expiresAt: null,
+      user: makeUser(),
+      ...overrides
+    })
+
+  it('listForAdmin: đổi ngày lọc sang mốc giờ Việt Nam, kèm tài khoản khách', async () => {
+    repo.findMany.mockResolvedValue([[makeTransaction({ user: makeUser() })], 1])
+
+    const result = await PaymentService.listForAdmin({ limit: 10, offset: 0, search: 'TT7K', from: '2026-11-20' })
+
+    expect(repo.findMany).toHaveBeenCalledWith({
+      limit: 10,
+      offset: 0,
+      search: 'TT7K',
+      createdFrom: new Date('2026-11-19T17:00:00.000Z'),
+      createdBefore: undefined,
+      withCustomer: true
+    })
+    expect(result.entries[0].customer.email).toBe('an.nguyen@gmail.com')
+  })
+
+  it('summarize: cộng theo loại và trạng thái', async () => {
+    repo.summarize.mockResolvedValue([
+      { type: 'payment', status: 'success', count: 3, amount: 2_000_000 },
+      { type: 'payment', status: 'failed', count: 2, amount: 500_000 },
+      { type: 'payment', status: 'pending', count: 1, amount: 100_000 },
+      { type: 'refund', status: 'success', count: 1, amount: 930_000 },
+      { type: 'refund', status: 'pending', count: 1, amount: 390_000 }
+    ])
+    repo.pendingRefunds.mockResolvedValue({ count: 2, amount: 780_000 })
+
+    await expect(PaymentService.summarize({ from: '2026-11-01', to: '2026-11-30' })).resolves.toEqual({
+      receivedAmount: 2_000_000,
+      receivedCount: 3,
+      refundedAmount: 930_000,
+      refundedCount: 1,
+      pendingRefundAmount: 780_000,
+      pendingRefundCount: 2,
+      failedCount: 2
+    })
+    expect(repo.summarize).toHaveBeenCalledWith(
+      new Date('2026-10-31T17:00:00.000Z'),
+      new Date('2026-11-30T17:00:00.000Z')
+    )
+  })
+
+  it('completeRefund: ghi mã tham chiếu và hoàn tất yêu cầu hoàn tiền', async () => {
+    repo.findByIdWithCustomer
+      .mockResolvedValueOnce(refund({ note: 'Khách huỷ đơn đã thanh toán' }))
+      .mockResolvedValueOnce(refund({ status: 'success', gatewayTransactionNo: 'FT1' }))
+    repo.completeRefund.mockResolvedValue(true)
+
+    const result = await PaymentService.completeRefund('refund-1', { referenceNo: 'FT1', note: null })
+
+    expect(repo.completeRefund).toHaveBeenCalledWith(expect.objectContaining({ id: 'refund-1', orderId: 'order-1' }), {
+      completedAt: expect.any(Date),
+      gatewayTransactionNo: 'FT1',
+      note: 'Khách huỷ đơn đã thanh toán'
+    })
+    expect(result).toMatchObject({ status: 'success', message: 'Đã hoàn tiền' })
+  })
+
+  it.each([
+    ['không phải giao dịch hoàn tiền', makeTransaction({ user: makeUser() }), 'không phải giao dịch hoàn tiền'],
+    ['đã hoàn trước đó', refund({ status: 'success' }), 'đã được xử lý'],
+    ['không tồn tại', null, NotFoundError]
+  ])('completeRefund từ chối khi %s', async (_case, found, error) => {
+    repo.findByIdWithCustomer.mockResolvedValue(found)
+
+    await expect(PaymentService.completeRefund('refund-1', { referenceNo: null, note: null })).rejects.toThrow(error)
+    expect(repo.completeRefund).not.toHaveBeenCalled()
+  })
+
+  it('completeRefund báo tải lại khi bên kia vừa xử lý', async () => {
+    repo.findByIdWithCustomer.mockResolvedValue(refund())
+    repo.completeRefund.mockResolvedValue(false)
+
+    await expect(PaymentService.completeRefund('refund-1', { referenceNo: null, note: null })).rejects.toThrow(
+      'vừa được xử lý'
+    )
   })
 })

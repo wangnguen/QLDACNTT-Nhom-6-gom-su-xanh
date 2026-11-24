@@ -2,7 +2,12 @@ import { Request, Response } from 'express'
 
 import { VnpayService } from '@common/services'
 
-import { MyTransactionQuerySchema } from './dto'
+import {
+  AdminTransactionQuerySchema,
+  CompleteRefundBody,
+  MyTransactionQuerySchema,
+  TransactionSummaryQuerySchema
+} from './dto'
 import { renderSandboxPage } from './payment.sandbox'
 import PaymentService from './payment.service'
 
@@ -19,6 +24,21 @@ class PaymentController {
   static async listMine(req: Request, res: Response) {
     const transactions = await PaymentService.listMine(req.user!.id, MyTransactionQuerySchema.parse(req.query))
     return res.ok(transactions)
+  }
+
+  // US-20: Quản lý giao dịch (admin)
+  static async listForAdmin(req: Request, res: Response) {
+    const transactions = await PaymentService.listForAdmin(AdminTransactionQuerySchema.parse(req.query))
+    return res.ok(transactions)
+  }
+
+  static async summary(req: Request, res: Response) {
+    return res.ok(await PaymentService.summarize(TransactionSummaryQuerySchema.parse(req.query)))
+  }
+
+  static async completeRefund(req: Request<{ id: string }>, res: Response) {
+    const transaction = await PaymentService.completeRefund(req.params.id, req.body as CompleteRefundBody)
+    return res.ok(transaction, { message: 'Đã xác nhận hoàn tiền' })
   }
 
   // US-14: Trang kết quả thanh toán gửi lại query VNPay trả về để server kiểm tra chữ ký và ghi nhận
