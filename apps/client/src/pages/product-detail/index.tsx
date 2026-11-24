@@ -4,6 +4,7 @@ import { ChevronRight, PackageCheck, PackageX, RotateCw, SearchX } from 'lucide-
 import { formatPrice } from '@lib/utils'
 import { ProductCard, ProductGallery } from '@components/product'
 import { AddToCart } from './components/AddToCart'
+import { ProductReviews } from './reviews/ProductReviews'
 import { useProductDetailStore } from './store'
 
 // Còn ít hàng thì nhắc khách (giống thẻ sản phẩm)
@@ -144,6 +145,9 @@ export default function ProductDetailPage() {
               )}
             </div>
           </div>
+
+          {/* US-24: Đánh giá sản phẩm */}
+          <ProductReviews product={product} />
 
           {related.length > 0 && (
             <section className='mt-20'>

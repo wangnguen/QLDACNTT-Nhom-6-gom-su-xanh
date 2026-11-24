@@ -53,7 +53,11 @@ export type {
   PostCategoryItem,
   PostSummary,
   PostDetail,
-  PostQuery
+  PostQuery,
+  ReviewItem,
+  RatingSummary,
+  ProductReviews,
+  MyReviewStatus
 } from './types'
 
 export { authService } from './services/auth.service'
@@ -66,3 +70,4 @@ export { registrationsService } from './services/registrations.service'
 export { ordersService } from './services/orders.service'
 export { paymentsService } from './services/payments.service'
 export { postsService } from './services/posts.service'
+export { reviewsService } from './services/reviews.service'

@@ -393,3 +393,32 @@ export interface PostQuery {
   category?: string
   search?: string
 }
+
+// ─── US-24: Đánh giá sản phẩm ────────────────────────────────────────────────
+
+export interface ReviewItem {
+  id: string
+  rating: number
+  comment: string | null
+  authorName: string
+  createdAt: string
+  updatedAt: string
+  adminReply: string | null
+  repliedAt: string | null
+}
+
+export interface RatingSummary {
+  average: number
+  count: number
+  distribution: Record<'1' | '2' | '3' | '4' | '5', number>
+}
+
+export interface ProductReviews extends Paginated<ReviewItem> {
+  summary: RatingSummary
+}
+
+export interface MyReviewStatus {
+  canReview: boolean
+  reason: string | null
+  review: (ReviewItem & { isHidden: boolean }) | null
+}

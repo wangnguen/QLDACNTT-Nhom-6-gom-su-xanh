@@ -159,6 +159,15 @@ export default function OrderDetailPage() {
                     <p className='text-xs text-muted'>
                       {formatPrice(item.unitPrice)} × {item.quantity}
                     </p>
+                    {/* US-24: Đơn đã giao thì mời khách đánh giá */}
+                    {order.status === 'delivered' && item.productId && (
+                      <Link
+                        to={`/products/${item.productSlug}#reviews-heading`}
+                        className='mt-1 inline-block text-xs font-semibold text-teal hover:underline'
+                      >
+                        Đánh giá sản phẩm
+                      </Link>
+                    )}
                   </div>
                   <p className='shrink-0 text-sm font-semibold'>{formatPrice(item.lineTotal)}</p>
                 </li>
