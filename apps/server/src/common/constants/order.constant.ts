@@ -56,6 +56,33 @@ export const ADMIN_CANCELLABLE_STATUSES: OrderStatus[] = [ORDER_STATUS.PENDING, 
 // Trạng thái admin chuyển sang ở trang quản lý đơn hàng (giao hàng xử lý ở trang vận chuyển)
 export const ADMIN_ORDER_ACTIONS = [ORDER_STATUS.CONFIRMED, ORDER_STATUS.CANCELLED] as const
 
+// ─── Vận chuyển ───────────────────────────────────────────────────────────────
+
+// Đơn vị vận chuyển cửa hàng dùng; `shop` = cửa hàng tự giao
+export const SHIPPING_CARRIER = {
+  GHN: 'ghn',
+  GHTK: 'ghtk',
+  VIETTEL_POST: 'viettel_post',
+  VNPOST: 'vnpost',
+  JT: 'jt',
+  SHOP: 'shop'
+} as const
+
+export type ShippingCarrier = (typeof SHIPPING_CARRIER)[keyof typeof SHIPPING_CARRIER]
+
+export const SHIPMENT_ACTION = {
+  // Giao cho đơn vị vận chuyển: đã xác nhận → đang giao
+  SHIP: 'ship',
+  // Sửa đơn vị vận chuyển / mã vận đơn khi đang giao
+  UPDATE: 'update',
+  // Giao thành công: đang giao → đã giao (đơn COD ghi nhận đã thu tiền)
+  DELIVER: 'deliver',
+  // Giao không thành công, hàng hoàn về: đang giao → đã hoàn hàng
+  RETURN: 'return'
+} as const
+
+export type ShipmentAction = (typeof SHIPMENT_ACTION)[keyof typeof SHIPMENT_ACTION]
+
 export const ORDER_NOT_FOUND_MESSAGE = 'Không tìm thấy đơn hàng'
 
 // ─── Giao dịch thanh toán ─────────────────────────────────────────────────────

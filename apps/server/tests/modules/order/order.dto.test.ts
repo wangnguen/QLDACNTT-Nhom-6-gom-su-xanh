@@ -5,7 +5,8 @@ import {
   CancelOrderBodySchema,
   CreateOrderBodySchema,
   MyOrderQuerySchema,
-  UpdateOrderStatusBodySchema
+  UpdateOrderStatusBodySchema,
+  UpdateShipmentBodySchema
 } from '@modules/order/dto'
 
 const validBody = {
@@ -105,5 +106,33 @@ describe('UpdateOrderStatusBodySchema', () => {
   it('giao hàng không đổi ở đây', () => {
     expect(UpdateOrderStatusBodySchema.safeParse({ status: 'shipping' }).success).toBe(false)
     expect(UpdateOrderStatusBodySchema.safeParse({ status: 'pending' }).success).toBe(false)
+  })
+})
+
+describe('UpdateShipmentBodySchema', () => {
+  it.each([
+    ['giao cho GHN', { action: 'ship', shippingCarrier: 'ghn', trackingCode: ' GHN5K7Q2M9 ' }],
+    ['cửa hàng tự giao, không cần mã', { action: 'ship', shippingCarrier: 'shop' }],
+    ['sửa mã vận đơn', { action: 'update', shippingCarrier: 'ghtk', trackingCode: 'S12345.HN-1' }],
+    ['giao thành công', { action: 'deliver' }],
+    ['hoàn hàng', { action: 'return', reason: 'Khách từ chối nhận' }]
+  ])('nhận %s', (_case, body) => {
+    expect(UpdateShipmentBodySchema.safeParse(body).success).toBe(true)
+  })
+
+  it('cắt khoảng trắng mã vận đơn', () => {
+    expect(
+      UpdateShipmentBodySchema.parse({ action: 'ship', shippingCarrier: 'ghn', trackingCode: ' GHN5K7Q2M9 ' })
+    ).toEqual({ action: 'ship', shippingCarrier: 'ghn', trackingCode: 'GHN5K7Q2M9' })
+  })
+
+  it.each([
+    ['thao tác lạ', { action: 'lost' }],
+    ['đơn vị vận chuyển lạ', { action: 'ship', shippingCarrier: 'grab', trackingCode: 'X1' }],
+    ['giao qua GHN mà thiếu mã vận đơn', { action: 'ship', shippingCarrier: 'ghn' }],
+    ['mã vận đơn có ký tự lạ', { action: 'ship', shippingCarrier: 'ghn', trackingCode: 'GHN 123' }],
+    ['hoàn hàng không có lý do', { action: 'return', reason: '  ' }]
+  ])('từ chối khi %s', (_case, body) => {
+    expect(UpdateShipmentBodySchema.safeParse(body).success).toBe(false)
   })
 })

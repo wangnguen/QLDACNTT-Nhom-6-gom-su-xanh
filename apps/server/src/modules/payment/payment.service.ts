@@ -55,6 +55,17 @@ class PaymentService {
     }
   }
 
+  // US-19: Đơn COD giao thành công — ghi nhận khoản tiền shipper đã thu
+  static newCodPayment(order: Pick<Order, 'userId' | 'total'>): NewTransactionData {
+    return {
+      code: generateCode(TRANSACTION_CODE_PREFIX, 8),
+      userId: order.userId,
+      method: PAYMENT_METHOD.COD,
+      amount: order.total,
+      expiresAt: null
+    }
+  }
+
   // US-16: Yêu cầu hoàn tiền cho đơn đã thanh toán bị huỷ — chờ cửa hàng hoàn tiền rồi xác nhận
   static newRefund(order: Pick<Order, 'userId' | 'paymentMethod' | 'total'>, note: string): NewTransactionData {
     return {

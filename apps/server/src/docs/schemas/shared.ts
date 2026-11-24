@@ -8,6 +8,7 @@ import {
   PAYMENT_METHOD,
   PAYMENT_STATUS,
   REGISTRATION_CANCELLED_BY,
+  SHIPPING_CARRIER,
   REGISTRATION_STATUS,
   TRANSACTION_STATUS,
   TRANSACTION_TYPE,
@@ -331,6 +332,15 @@ export const OrderDetailSchema = registry.register(
     cancelReason: z.string().nullable().meta({ example: null }),
     cancelledBy: z.enum(ORDER_CANCELLED_BY).nullable().meta({ example: null }),
     cancelledAt: z.string().datetime().nullable().meta({ example: null }),
+    shippingCarrier: z.enum(SHIPPING_CARRIER).nullable().meta({
+      example: 'ghn',
+      description: 'Đơn vị vận chuyển: `ghn`, `ghtk`, `viettel_post`, `vnpost`, `jt`, `shop` (cửa hàng tự giao)'
+    }),
+    trackingCode: z.string().nullable().meta({ example: 'GHN5K7Q2M9', description: 'Mã vận đơn' }),
+    shippedAt: z.string().datetime().nullable().meta({ example: '2026-11-21T02:00:00.000Z' }),
+    deliveredAt: z.string().datetime().nullable().meta({ example: null }),
+    returnedAt: z.string().datetime().nullable().meta({ example: null }),
+    deliveryNote: z.string().nullable().meta({ example: null, description: 'Lý do giao không thành công' }),
     canPay: z.boolean().meta({ example: false, description: 'Còn thanh toán trực tuyến lại được không' }),
     canCancel: z.boolean().meta({ example: true, description: 'Khách còn tự huỷ được không (đơn chờ xác nhận)' })
   })

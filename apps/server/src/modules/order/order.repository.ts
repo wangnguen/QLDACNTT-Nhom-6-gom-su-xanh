@@ -1,6 +1,6 @@
 import { Brackets, In } from 'typeorm'
 
-import { OrderStatus, PaymentMethod, PaymentStatus } from '@common/constants'
+import { OrderStatus, PaymentMethod, PaymentStatus, ShippingCarrier } from '@common/constants'
 
 import { CartItem } from '@entities/cart-item.entity'
 import { OrderItem } from '@entities/order-item.entity'
@@ -39,13 +39,14 @@ export type NewOrderItemData = Pick<
 > & { productId: string }
 
 export type NewTransactionData = Pick<PaymentTransaction, 'code' | 'userId' | 'method' | 'amount' | 'expiresAt'> &
-  Partial<Pick<PaymentTransaction, 'type' | 'note'>>
+  Partial<Pick<PaymentTransaction, 'type' | 'note' | 'status' | 'completedAt'>>
 
 export type OrderFilter = {
   userId?: string
   status?: OrderStatus
   paymentStatus?: PaymentStatus
   paymentMethod?: PaymentMethod
+  shippingCarrier?: ShippingCarrier
   // Mã đơn, tên / số điện thoại người nhận, email tài khoản (trang admin)
   search?: string
   // Đặt trong khoảng [placedFrom, placedBefore)
@@ -60,7 +61,22 @@ export type OrderFilter = {
 const escapeLike = (value: string) => value.replace(/[\\%_]/g, (char) => `\\${char}`)
 
 export type OrderStatusChange = Partial<
-  Pick<Order, 'status' | 'paymentStatus' | 'paidAt' | 'confirmedAt' | 'cancelReason' | 'cancelledBy' | 'cancelledAt'>
+  Pick<
+    Order,
+    | 'status'
+    | 'paymentStatus'
+    | 'paidAt'
+    | 'confirmedAt'
+    | 'cancelReason'
+    | 'cancelledBy'
+    | 'cancelledAt'
+    | 'shippingCarrier'
+    | 'trackingCode'
+    | 'shippedAt'
+    | 'deliveredAt'
+    | 'returnedAt'
+    | 'deliveryNote'
+  >
 >
 
 export type OrderTransition = {
@@ -106,6 +122,9 @@ class OrderRepository {
     if (filter.paymentMethod) {
       query.andWhere('order.paymentMethod = :paymentMethod', { paymentMethod: filter.paymentMethod })
     }
+    if (filter.shippingCarrier) {
+      query.andWhere('order.shippingCarrier = :shippingCarrier', { shippingCarrier: filter.shippingCarrier })
+    }
     if (filter.placedFrom) query.andWhere('order.createdAt >= :placedFrom', { placedFrom: filter.placedFrom })
     if (filter.placedBefore) query.andWhere('order.createdAt < :placedBefore', { placedBefore: filter.placedBefore })
 
@@ -119,6 +138,7 @@ class OrderRepository {
             .orWhere('order.recipientName ILIKE :keyword')
             .orWhere('order.recipientPhone LIKE :keyword')
             .orWhere('user.email ILIKE :keyword')
+            .orWhere('order.trackingCode ILIKE :keyword')
         )
       )
     }

@@ -3,6 +3,7 @@ import {
   OrderStatus,
   PaymentMethod,
   PaymentStatus,
+  ShippingCarrier,
   TransactionStatus,
   TransactionType
 } from '@common/constants'
@@ -43,6 +44,13 @@ export type OrderDetail = {
   cancelReason: string | null
   cancelledBy: OrderCancelledBy | null
   cancelledAt: Date | null
+  shippingCarrier: ShippingCarrier | null
+  trackingCode: string | null
+  shippedAt: Date | null
+  deliveredAt: Date | null
+  returnedAt: Date | null
+  // Lý do giao không thành công
+  deliveryNote: string | null
   // Khách còn thanh toán trực tuyến lại được (đơn VNPay chưa thanh toán, chưa huỷ)
   canPay: boolean
   // Khách còn tự huỷ được (đơn chờ xác nhận)

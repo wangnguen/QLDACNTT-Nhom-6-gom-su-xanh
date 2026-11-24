@@ -47,6 +47,12 @@ export const toOrderDetail = (order: Order): OrderDetail => {
     cancelReason: order.cancelReason,
     cancelledBy: order.cancelledBy,
     cancelledAt: order.cancelledAt,
+    shippingCarrier: order.shippingCarrier,
+    trackingCode: order.trackingCode,
+    shippedAt: order.shippedAt,
+    deliveredAt: order.deliveredAt,
+    returnedAt: order.returnedAt,
+    deliveryNote: order.deliveryNote,
     canPay: canPayOnline(order),
     canCancel: CUSTOMER_CANCELLABLE_STATUSES.includes(order.status)
   }

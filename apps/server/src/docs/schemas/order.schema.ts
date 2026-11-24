@@ -10,7 +10,8 @@ import {
   CancelOrderBodySchema,
   CreateOrderBodySchema,
   MyOrderQuerySchema,
-  UpdateOrderStatusBodySchema
+  UpdateOrderStatusBodySchema,
+  UpdateShipmentBodySchema
 } from '@modules/order/dto'
 
 import {
@@ -199,8 +200,8 @@ registry.registerPath({
   summary: 'Danh sách đơn hàng',
   description: `Mới đặt lên trước, kèm tài khoản đặt hàng. Phân trang bằng \`limit\`/\`offset\`.
 
-- \`search\`: mã đơn, tên / số điện thoại người nhận, email tài khoản
-- \`status\`, \`paymentStatus\`, \`paymentMethod\`
+- \`search\`: mã đơn, mã vận đơn, tên / số điện thoại người nhận, email tài khoản
+- \`status\`, \`paymentStatus\`, \`paymentMethod\`, \`shippingCarrier\`
 - \`from\`, \`to\`: ngày đặt (YYYY-MM-DD, giờ Việt Nam, tính cả hai ngày)`,
   security: [{ bearerAuth: [] }],
   request: { query: AdminOrderQuerySchema },
@@ -278,6 +279,50 @@ Giao hàng (đang giao / đã giao / hoàn hàng) xử lý ở API vận chuyể
       }
     },
     400: badRequestResponse('Không đổi được trạng thái / đơn VNPay chưa thanh toán'),
+    ...adminErrors,
+    404: notFoundResponse('Không tìm thấy đơn hàng'),
+    409: conflictResponse('Trạng thái đơn hàng vừa thay đổi'),
+    422: validationErrorResponse()
+  }
+})
+
+// ─── US-19: Quản lý vận chuyển ───────────────────────────────────────────────
+
+registry.registerPath({
+  method: 'patch',
+  path: '/admin/orders/{id}/shipment',
+  tags: ['Admin - Vận chuyển (US-19)'],
+  summary: 'Cập nhật vận chuyển',
+  description: `Danh sách đơn cần giao dùng \`GET /admin/orders?status=confirmed\` (lọc thêm \`shippingCarrier\`).
+
+- \`ship\`: đơn \`confirmed\` → \`shipping\`, kèm đơn vị vận chuyển và mã vận đơn (cửa hàng tự giao thì không cần mã)
+- \`update\`: sửa đơn vị vận chuyển / mã vận đơn khi đang giao
+- \`deliver\`: \`shipping\` → \`delivered\`; đơn COD chuyển sang đã thanh toán và có một giao dịch COD thành công
+- \`return\`: giao không thành công, \`shipping\` → \`returned\` kèm \`reason\`; trả lại tồn kho, đơn đã thanh toán chuyển sang chờ hoàn tiền`,
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: idParamSchema,
+    ...jsonBody(UpdateShipmentBodySchema, {
+      ship: { summary: 'Giao cho GHN', value: { action: 'ship', shippingCarrier: 'ghn', trackingCode: 'GHN5K7Q2M9' } },
+      deliver: { summary: 'Giao thành công', value: { action: 'deliver' } },
+      return: { summary: 'Hoàn hàng', value: { action: 'return', reason: 'Khách không nghe máy 3 lần' } }
+    })
+  },
+  responses: {
+    200: {
+      description: 'Đã cập nhật vận chuyển',
+      content: {
+        'application/json': {
+          schema: successWrapper(
+            AdminOrderDetailSchema,
+            '/admin/orders/{id}/shipment',
+            200,
+            'Đã chuyển đơn sang đang giao'
+          )
+        }
+      }
+    },
+    400: badRequestResponse('Đơn không ở trạng thái phù hợp với thao tác'),
     ...adminErrors,
     404: notFoundResponse('Không tìm thấy đơn hàng'),
     409: conflictResponse('Trạng thái đơn hàng vừa thay đổi'),

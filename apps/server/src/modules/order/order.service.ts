@@ -9,7 +9,9 @@ import {
   OrderStatus,
   PAYMENT_METHOD,
   PAYMENT_STATUS,
-  SHIPPING_FEE
+  SHIPMENT_ACTION,
+  SHIPPING_FEE,
+  TRANSACTION_STATUS
 } from '@common/constants'
 import { BadRequestError, ConflictError, NotFoundError } from '@common/errors'
 import { AdminOrder, AdminOrderDetail, CheckoutResult, OrderDetail, Paginated } from '@common/types'
@@ -22,7 +24,14 @@ import PaymentService from '@modules/payment/payment.service'
 
 import { Order } from '@entities/order.entity'
 
-import { AdminOrderQuery, CancelOrderBody, CreateOrderBody, MyOrderQuery, UpdateOrderStatusBody } from './dto'
+import {
+  AdminOrderQuery,
+  CancelOrderBody,
+  CreateOrderBody,
+  MyOrderQuery,
+  UpdateOrderStatusBody,
+  UpdateShipmentBody
+} from './dto'
 import { toAdminOrder, toOrderDetail } from './order.mapper'
 import OrderRepository, { CheckoutLine, CheckoutPlan, NewOrderItemData, OrderTransition } from './order.repository'
 
@@ -185,6 +194,89 @@ class OrderService {
       ensurePaid(locked)
       return { change: { status: ORDER_STATUS.CONFIRMED, confirmedAt: new Date() } }
     })
+    if (!changed) throw new ConflictError(ORDER_CHANGED_MESSAGE)
+    return this.getForAdmin(id)
+  }
+
+  /**
+   * US-19: Quản lý vận chuyển
+   * - ship: đơn đã xác nhận giao cho đơn vị vận chuyển (kèm mã vận đơn) → đang giao
+   * - update: sửa đơn vị vận chuyển / mã vận đơn khi đang giao
+   * - deliver: giao thành công → đã giao; đơn COD ghi nhận đã thu tiền (một giao dịch thành công)
+   * - return: giao không thành công → hoàn hàng: trả lại tồn kho, đơn đã thanh toán chuyển sang chờ hoàn tiền
+   */
+  static async updateShipment(id: string, body: UpdateShipmentBody): Promise<AdminOrderDetail> {
+    const order = await OrderRepository.findById(id)
+    if (!order) throw new NotFoundError(ORDER_NOT_FOUND_MESSAGE)
+
+    const now = new Date()
+    let from: OrderStatus[]
+    let build: (locked: Order) => OrderTransition
+
+    switch (body.action) {
+      case SHIPMENT_ACTION.SHIP:
+        from = [ORDER_STATUS.CONFIRMED]
+        this.ensureStatus(order, from, 'giao cho đơn vị vận chuyển')
+        build = () => ({
+          change: {
+            status: ORDER_STATUS.SHIPPING,
+            shippingCarrier: body.shippingCarrier,
+            trackingCode: body.trackingCode ?? null,
+            shippedAt: now
+          }
+        })
+        break
+      case SHIPMENT_ACTION.UPDATE:
+        from = [ORDER_STATUS.SHIPPING]
+        this.ensureStatus(order, from, 'sửa thông tin vận chuyển')
+        build = () => ({
+          change: { shippingCarrier: body.shippingCarrier, trackingCode: body.trackingCode ?? null }
+        })
+        break
+      case SHIPMENT_ACTION.DELIVER:
+        from = [ORDER_STATUS.SHIPPING]
+        this.ensureStatus(order, from, 'xác nhận đã giao')
+        build = (locked) => {
+          const collectCash =
+            locked.paymentMethod === PAYMENT_METHOD.COD && locked.paymentStatus === PAYMENT_STATUS.UNPAID
+          return {
+            change: {
+              status: ORDER_STATUS.DELIVERED,
+              deliveredAt: now,
+              ...(collectCash && { paymentStatus: PAYMENT_STATUS.PAID, paidAt: now })
+            },
+            transactions: collectCash
+              ? [
+                  {
+                    ...PaymentService.newCodPayment(locked),
+                    status: TRANSACTION_STATUS.SUCCESS,
+                    completedAt: now
+                  }
+                ]
+              : []
+          }
+        }
+        break
+      case SHIPMENT_ACTION.RETURN:
+        from = [ORDER_STATUS.SHIPPING]
+        this.ensureStatus(order, from, 'ghi nhận hoàn hàng')
+        build = (locked) => {
+          const paid = locked.paymentStatus === PAYMENT_STATUS.PAID
+          return {
+            change: {
+              status: ORDER_STATUS.RETURNED,
+              returnedAt: now,
+              deliveryNote: body.reason,
+              ...(paid && { paymentStatus: PAYMENT_STATUS.REFUND_PENDING })
+            },
+            restock: true,
+            transactions: paid ? [PaymentService.newRefund(locked, `Giao không thành công: ${body.reason}`)] : []
+          }
+        }
+        break
+    }
+
+    const changed = await OrderRepository.transition(id, from, build)
     if (!changed) throw new ConflictError(ORDER_CHANGED_MESSAGE)
     return this.getForAdmin(id)
   }

@@ -8,7 +8,8 @@ import {
   PAYMENT_METHOD,
   PAYMENT_STATUS,
   PaymentMethod,
-  PaymentStatus
+  PaymentStatus,
+  ShippingCarrier
 } from '@common/constants/order.constant'
 
 import { BaseEntity } from './base.entity'
@@ -77,6 +78,28 @@ export class Order extends BaseEntity {
 
   @Column({ type: 'timestamptz', nullable: true })
   cancelledAt: Date | null
+
+  // ─── Vận chuyển (US-19) ───
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  shippingCarrier: ShippingCarrier | null
+
+  // Mã vận đơn của đơn vị vận chuyển
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  trackingCode: string | null
+
+  @Column({ type: 'timestamptz', nullable: true })
+  shippedAt: Date | null
+
+  @Column({ type: 'timestamptz', nullable: true })
+  deliveredAt: Date | null
+
+  @Column({ type: 'timestamptz', nullable: true })
+  returnedAt: Date | null
+
+  // Lý do giao không thành công
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  deliveryNote: string | null
 
   @OneToMany(() => OrderItem, (item) => item.order)
   items: Relation<OrderItem>[]

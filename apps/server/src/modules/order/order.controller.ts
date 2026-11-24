@@ -8,13 +8,21 @@ import {
   CancelOrderBody,
   CreateOrderBody,
   MyOrderQuerySchema,
-  UpdateOrderStatusBody
+  UpdateOrderStatusBody,
+  UpdateShipmentBody
 } from './dto'
 import OrderService from './order.service'
 
 const ADMIN_SUCCESS_MESSAGE: Record<UpdateOrderStatusBody['status'], string> = {
   confirmed: 'Đã xác nhận đơn hàng',
   cancelled: 'Đã huỷ đơn hàng'
+}
+
+const SHIPMENT_SUCCESS_MESSAGE: Record<UpdateShipmentBody['action'], string> = {
+  ship: 'Đã chuyển đơn sang đang giao',
+  update: 'Đã cập nhật thông tin vận chuyển',
+  deliver: 'Đã xác nhận giao hàng thành công',
+  return: 'Đã ghi nhận hoàn hàng'
 }
 
 class OrderController {
@@ -67,6 +75,13 @@ class OrderController {
     const body = req.body as UpdateOrderStatusBody
     const order = await OrderService.updateStatusByAdmin(req.params.id, body)
     return res.ok(order, { message: ADMIN_SUCCESS_MESSAGE[body.status] })
+  }
+
+  // US-19: Quản lý vận chuyển
+  static async updateShipment(req: Request<{ id: string }>, res: Response) {
+    const body = req.body as UpdateShipmentBody
+    const order = await OrderService.updateShipment(req.params.id, body)
+    return res.ok(order, { message: SHIPMENT_SUCCESS_MESSAGE[body.action] })
   }
 
   static async pay(req: Request<{ id: string }>, res: Response) {

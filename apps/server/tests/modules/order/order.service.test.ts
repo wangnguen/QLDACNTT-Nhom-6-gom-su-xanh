@@ -383,3 +383,120 @@ describe('OrderService (admin)', () => {
     })
   })
 })
+
+describe('OrderService.updateShipment', () => {
+  const mockTransition = (locked: Order) => {
+    let transition: OrderTransition | undefined
+    repo.transition.mockImplementation(async (_id, from, build) => {
+      if (!from.includes(locked.status)) return false
+      transition = build(locked)
+      return true
+    })
+    return () => transition!
+  }
+
+  beforeEach(() => {
+    paymentRepo.findMany.mockResolvedValue([[], 0])
+  })
+
+  const found = (order: Order) => {
+    repo.findById.mockImplementation(
+      async (_id, withCustomer) => (withCustomer ? { ...order, user: makeUser() } : order) as Order
+    )
+  }
+
+  it('ship: đơn đã xác nhận chuyển sang đang giao kèm mã vận đơn', async () => {
+    const order = makeOrder({ status: 'confirmed' })
+    found(order)
+    const getTransition = mockTransition(order)
+
+    await OrderService.updateShipment('order-1', { action: 'ship', shippingCarrier: 'ghn', trackingCode: 'GHN123' })
+
+    expect(repo.transition).toHaveBeenCalledWith('order-1', ['confirmed'], expect.any(Function))
+    expect(getTransition()).toEqual({
+      change: { status: 'shipping', shippingCarrier: 'ghn', trackingCode: 'GHN123', shippedAt: expect.any(Date) }
+    })
+  })
+
+  it('update: chỉ sửa thông tin vận chuyển khi đang giao', async () => {
+    const order = makeOrder({ status: 'shipping', shippingCarrier: 'ghn', trackingCode: 'GHN123' })
+    found(order)
+    const getTransition = mockTransition(order)
+
+    await OrderService.updateShipment('order-1', { action: 'update', shippingCarrier: 'shop', trackingCode: null })
+
+    expect(getTransition()).toEqual({ change: { shippingCarrier: 'shop', trackingCode: null } })
+  })
+
+  it('deliver đơn COD: đã giao, đã thu tiền và ghi một giao dịch COD thành công', async () => {
+    const order = makeOrder({ status: 'shipping', paymentMethod: 'cod' })
+    found(order)
+    const getTransition = mockTransition(order)
+
+    await OrderService.updateShipment('order-1', { action: 'deliver' })
+
+    expect(getTransition().change).toEqual({
+      status: 'delivered',
+      deliveredAt: expect.any(Date),
+      paymentStatus: 'paid',
+      paidAt: expect.any(Date)
+    })
+    expect(getTransition().transactions).toEqual([
+      expect.objectContaining({ method: 'cod', amount: 930000, status: 'success', completedAt: expect.any(Date) })
+    ])
+  })
+
+  it('deliver đơn VNPay đã thanh toán: không phát sinh giao dịch', async () => {
+    const order = makeOrder({ status: 'shipping', paymentStatus: 'paid' })
+    found(order)
+    const getTransition = mockTransition(order)
+
+    await OrderService.updateShipment('order-1', { action: 'deliver' })
+
+    expect(getTransition()).toEqual({
+      change: { status: 'delivered', deliveredAt: expect.any(Date) },
+      transactions: []
+    })
+  })
+
+  it('return đơn đã thanh toán: hoàn hàng, trả tồn kho, chờ hoàn tiền', async () => {
+    const order = makeOrder({ status: 'shipping', paymentStatus: 'paid' })
+    found(order)
+    const getTransition = mockTransition(order)
+
+    await OrderService.updateShipment('order-1', { action: 'return', reason: 'Khách từ chối nhận' })
+
+    expect(getTransition()).toMatchObject({
+      change: { status: 'returned', deliveryNote: 'Khách từ chối nhận', paymentStatus: 'refund_pending' },
+      restock: true,
+      transactions: [expect.objectContaining({ type: 'refund', amount: 930000 })]
+    })
+  })
+
+  it('return đơn COD chưa thu tiền: không hoàn tiền', async () => {
+    const order = makeOrder({ status: 'shipping', paymentMethod: 'cod' })
+    found(order)
+    const getTransition = mockTransition(order)
+
+    await OrderService.updateShipment('order-1', { action: 'return', reason: 'Sai địa chỉ' })
+
+    expect(getTransition().change.paymentStatus).toBeUndefined()
+    expect(getTransition().transactions).toEqual([])
+  })
+
+  it.each([
+    ['giao đơn chưa xác nhận', makeOrder(), { action: 'ship', shippingCarrier: 'ghn', trackingCode: 'X1' }],
+    [
+      'giao lại đơn đang giao',
+      makeOrder({ status: 'shipping' }),
+      { action: 'ship', shippingCarrier: 'ghn', trackingCode: 'X1' }
+    ],
+    ['xác nhận đã giao khi chưa giao', makeOrder({ status: 'confirmed' }), { action: 'deliver' }],
+    ['hoàn hàng đơn đã giao', makeOrder({ status: 'delivered' }), { action: 'return', reason: 'x' }]
+  ] as const)('không cho %s', async (_case, order, body) => {
+    found(order)
+
+    await expect(OrderService.updateShipment('order-1', body)).rejects.toThrow(BadRequestError)
+    expect(repo.transition).not.toHaveBeenCalled()
+  })
+})
