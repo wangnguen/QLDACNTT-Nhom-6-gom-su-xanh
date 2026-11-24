@@ -240,3 +240,101 @@ export interface CreateRegistrationRequest {
   contactPhone: string
   note: string | null
 }
+
+// ─── US-14..US-17: Đơn hàng và thanh toán ────────────────────────────────────
+
+// pending = chờ xác nhận, confirmed = đang chuẩn bị, shipping = đang giao, returned = giao không thành công
+export type OrderStatus = 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled' | 'returned'
+export type PaymentMethod = 'cod' | 'vnpay'
+export type PaymentStatus = 'unpaid' | 'paid' | 'refund_pending' | 'refunded'
+export type ShippingCarrier = 'ghn' | 'ghtk' | 'viettel_post' | 'vnpost' | 'jt' | 'shop'
+
+export interface OrderLine {
+  id: string
+  productId: string | null
+  productName: string
+  productSlug: string
+  imageUrl: string | null
+  unitPrice: number
+  quantity: number
+  lineTotal: number
+}
+
+// Thời điểm là chuỗi ISO 8601 (UTC) do server trả về
+export interface OrderDetail {
+  id: string
+  code: string
+  status: OrderStatus
+  paymentMethod: PaymentMethod
+  paymentStatus: PaymentStatus
+  subtotal: number
+  shippingFee: number
+  total: number
+  itemCount: number
+  items: OrderLine[]
+  recipientName: string
+  recipientPhone: string
+  shippingAddress: string
+  note: string | null
+  placedAt: string
+  paidAt: string | null
+  confirmedAt: string | null
+  cancelReason: string | null
+  cancelledBy: 'user' | 'admin' | null
+  cancelledAt: string | null
+  shippingCarrier: ShippingCarrier | null
+  trackingCode: string | null
+  shippedAt: string | null
+  deliveredAt: string | null
+  returnedAt: string | null
+  deliveryNote: string | null
+  canPay: boolean
+  canCancel: boolean
+}
+
+export interface CheckoutRequest {
+  recipientName: string
+  recipientPhone: string
+  shippingAddress: string
+  note: string | null
+  paymentMethod: PaymentMethod
+}
+
+export interface CheckoutResult {
+  order: OrderDetail
+  // Link sang cổng thanh toán (đơn VNPay), null với COD
+  paymentUrl: string | null
+}
+
+export interface PaymentMethodOption {
+  method: PaymentMethod
+  enabled: boolean
+  // Cổng thanh toán giả lập (môi trường phát triển)
+  sandbox: boolean
+}
+
+export type TransactionType = 'payment' | 'refund'
+export type TransactionStatus = 'pending' | 'success' | 'failed'
+
+export interface Transaction {
+  id: string
+  code: string
+  type: TransactionType
+  method: PaymentMethod
+  amount: number
+  status: TransactionStatus
+  gatewayTransactionNo: string | null
+  bankCode: string | null
+  responseCode: string | null
+  // Diễn giải kết quả, vd "Khách hàng huỷ giao dịch"
+  message: string
+  note: string | null
+  createdAt: string
+  completedAt: string | null
+  order: Pick<OrderDetail, 'id' | 'code' | 'status' | 'total'>
+}
+
+export interface PaymentResult {
+  transaction: Transaction
+  order: OrderDetail
+}

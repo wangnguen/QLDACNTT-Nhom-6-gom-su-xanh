@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, ShoppingBag, Trash2 } from 'lucide-react'
+import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from '@lib/schemas/order'
 import { formatPrice } from '@lib/utils'
 import { useCartStore } from '@stores/cartStore'
 import { CartLineItem } from './components/CartLineItem'
@@ -112,11 +113,19 @@ export default function CartPage() {
               {issueCount} sản phẩm không mua được hiện không được tính vào tạm tính.
             </p>
           )}
-          <p className='mt-3 text-xs text-muted'>Phí vận chuyển sẽ được tính khi đặt hàng.</p>
-          <button type='button' disabled className='btn-primary mt-6 w-full'>
-            Đặt hàng
-          </button>
-          <p className='mt-2 text-center text-xs text-muted'>Chức năng đặt hàng sẽ có ở bản cập nhật tiếp theo.</p>
+          <p className='mt-3 text-xs text-muted'>
+            Phí giao hàng {formatPrice(SHIPPING_FEE)}, miễn phí cho đơn từ {formatPrice(FREE_SHIPPING_THRESHOLD)}.
+          </p>
+          {/* US-14: Đặt các sản phẩm mua được trong giỏ */}
+          {cart.subtotal > 0 ? (
+            <Link to='/checkout' className='btn-primary mt-6 w-full'>
+              Đặt hàng
+            </Link>
+          ) : (
+            <button type='button' disabled className='btn-primary mt-6 w-full'>
+              Đặt hàng
+            </button>
+          )}
         </aside>
       </div>
     </div>
