@@ -338,3 +338,9 @@ export interface PaymentResult {
   transaction: Transaction
   order: OrderDetail
 }
+
+export interface MyOrderQuery {
+  limit?: number
+  offset?: number
+  status?: OrderStatus
+}

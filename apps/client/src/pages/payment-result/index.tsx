@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
-import { CircleCheckBig, CircleX, LoaderCircle, RotateCw, Store } from 'lucide-react'
+import { CircleCheckBig, CircleX, LoaderCircle, ReceiptText, RotateCw, Store } from 'lucide-react'
 import type { OrderDetail, Transaction } from '@lib/api'
 import { formatDateTime, formatPrice } from '@lib/utils'
 import { PAYMENT_METHOD_LABEL } from '@components/order'
@@ -85,7 +85,7 @@ export default function PaymentResultPage() {
           {formatPrice(placedOrder.total)} khi nhận hàng.
         </p>
         <OrderFacts order={placedOrder} />
-        <Actions />
+        <Actions orderId={placedOrder.id} />
       </Shell>
     )
   }
@@ -140,7 +140,7 @@ export default function PaymentResultPage() {
       </p>
       {error && <p className='mt-2 text-sm font-semibold text-danger'>{error}</p>}
       <OrderFacts order={order} transaction={transaction} />
-      <Actions>
+      <Actions orderId={order.id}>
         {order.canPay && !isAuthenticated && (
           <Link to='/login' className='btn-primary'>
             Đăng nhập để thanh toán lại
@@ -157,10 +157,16 @@ export default function PaymentResultPage() {
   )
 }
 
-function Actions({ children }: { children?: ReactNode }) {
+function Actions({ orderId, children }: { orderId?: string; children?: ReactNode }) {
   return (
     <div className='mt-6 flex flex-col justify-center gap-2 sm:flex-row'>
       {children}
+      {orderId && (
+        <Link to={`/account/orders/${orderId}`} className='btn-outline'>
+          <ReceiptText size={16} />
+          Xem đơn hàng
+        </Link>
+      )}
       <Link to='/products' className='btn-outline'>
         <Store size={16} />
         Tiếp tục mua sắm
