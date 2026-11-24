@@ -339,3 +339,43 @@ export interface PostCategoryPayload {
   description: string | null
   isActive: boolean
 }
+
+export type PostStatus = 'draft' | 'published'
+
+export interface PostSummary {
+  id: string
+  title: string
+  slug: string
+  excerpt: string
+  coverImageUrl: string | null
+  category: PostCategoryRef
+  status: PostStatus
+  publishedAt: string | null
+  readingMinutes: number
+  viewCount: number
+  author: { id: string; fullName: string } | null
+  updatedAt: string
+}
+
+export interface PostDetail extends PostSummary {
+  content: string
+  // Tóm tắt admin nhập (null = tự lấy từ nội dung)
+  customExcerpt: string | null
+}
+
+export interface AdminPostQuery {
+  limit?: number
+  offset?: number
+  search?: string
+  categoryId?: string
+  status?: PostStatus
+}
+
+export interface PostPayload {
+  title: string
+  excerpt: string | null
+  content: string
+  coverImageUrl: string | null
+  categoryId: string
+  status: PostStatus
+}

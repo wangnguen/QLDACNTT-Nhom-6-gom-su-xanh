@@ -20,6 +20,8 @@ import OrderDetailPage from './pages/orders/detail'
 import ShippingPage from './pages/shipping'
 import PaymentsPage from './pages/payments'
 import PostCategoriesPage from './pages/post-categories'
+import PostsPage from './pages/posts'
+import PostFormPage from './pages/posts/form'
 import NotFoundPage from './pages/not-found'
 
 function App() {
@@ -83,6 +85,11 @@ function App() {
 
           {/* US-21: Quản lý danh mục bài viết */}
           <Route path='/post-categories' element={<PostCategoriesPage />} />
+
+          {/* US-22: Quản lý bài viết */}
+          <Route path='/posts' element={<PostsPage />} />
+          <Route path='/posts/new' element={<PostFormPage />} />
+          <Route path='/posts/:id/edit' element={<PostFormPage />} />
         </Route>
 
         <Route path='*' element={<NotFoundPage />} />
