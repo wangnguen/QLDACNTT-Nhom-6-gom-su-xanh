@@ -55,7 +55,10 @@ export type {
   PostPayload,
   ReviewStatus,
   AdminReview,
-  AdminReviewQuery
+  AdminReviewQuery,
+  StatsGroupBy,
+  RevenueSummary,
+  RevenueStats
 } from './types'
 
 export { authService } from './services/auth.service'
@@ -69,3 +72,4 @@ export { paymentsService } from './services/payments.service'
 export { postCategoriesService } from './services/post-categories.service'
 export { postsService } from './services/posts.service'
 export { reviewsService } from './services/reviews.service'
+export { statsService } from './services/stats.service'

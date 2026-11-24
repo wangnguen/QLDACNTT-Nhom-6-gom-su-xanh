@@ -407,3 +407,35 @@ export interface AdminReviewQuery {
   status?: ReviewStatus
   productId?: string
 }
+
+// ─── US-26: Thống kê doanh thu ───────────────────────────────────────────────
+
+export type StatsGroupBy = 'day' | 'month'
+
+export interface RevenueSummary {
+  revenue: number
+  deliveredOrders: number
+  averageOrderValue: number
+  newOrders: number
+  cancelledOrders: number
+  refundedAmount: number
+  workshopRevenue: number
+}
+
+export interface RevenueStats {
+  from: string
+  to: string
+  groupBy: StatsGroupBy
+  summary: RevenueSummary
+  previous: RevenueSummary
+  series: { period: string; revenue: number; orders: number }[]
+  topProducts: {
+    productId: string | null
+    name: string
+    slug: string
+    imageUrl: string | null
+    quantity: number
+    revenue: number
+  }[]
+  byPaymentMethod: { method: PaymentMethod; revenue: number; orders: number }[]
+}
