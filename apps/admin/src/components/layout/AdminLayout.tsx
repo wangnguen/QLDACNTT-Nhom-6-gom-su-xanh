@@ -8,6 +8,7 @@ import {
   FolderTree,
   LayoutDashboard,
   LogOut,
+  MessageSquareText,
   Package,
   ReceiptText,
   Truck,
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { to: '/orders', label: 'Đơn hàng', icon: ReceiptText, end: false },
   { to: '/shipping', label: 'Vận chuyển', icon: Truck, end: false },
   { to: '/payments', label: 'Giao dịch', icon: WalletCards, end: false },
+  { to: '/reviews', label: 'Đánh giá', icon: MessageSquareText, end: false },
   { to: '/posts', label: 'Bài viết', icon: BookOpen, end: false },
   { to: '/post-categories', label: 'Danh mục bài viết', icon: FolderKanban, end: false }
 ]

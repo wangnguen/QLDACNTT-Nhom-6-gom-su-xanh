@@ -22,6 +22,7 @@ import PaymentsPage from './pages/payments'
 import PostCategoriesPage from './pages/post-categories'
 import PostsPage from './pages/posts'
 import PostFormPage from './pages/posts/form'
+import ReviewsPage from './pages/reviews'
 import NotFoundPage from './pages/not-found'
 
 function App() {
@@ -90,6 +91,9 @@ function App() {
           <Route path='/posts' element={<PostsPage />} />
           <Route path='/posts/new' element={<PostFormPage />} />
           <Route path='/posts/:id/edit' element={<PostFormPage />} />
+
+          {/* US-25: Quản lý đánh giá */}
+          <Route path='/reviews' element={<ReviewsPage />} />
         </Route>
 
         <Route path='*' element={<NotFoundPage />} />

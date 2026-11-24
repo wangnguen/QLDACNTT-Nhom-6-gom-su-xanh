@@ -379,3 +379,31 @@ export interface PostPayload {
   categoryId: string
   status: PostStatus
 }
+
+// ─── US-25: Đánh giá sản phẩm ────────────────────────────────────────────────
+
+export type ReviewStatus = 'visible' | 'hidden'
+
+export interface AdminReview {
+  id: string
+  rating: number
+  comment: string | null
+  authorName: string
+  createdAt: string
+  updatedAt: string
+  adminReply: string | null
+  repliedAt: string | null
+  isHidden: boolean
+  product: { id: string; name: string; slug: string; imageUrl: string | null }
+  customer: { id: string; fullName: string; email: string }
+  orderCode: string | null
+}
+
+export interface AdminReviewQuery {
+  limit?: number
+  offset?: number
+  search?: string
+  rating?: number
+  status?: ReviewStatus
+  productId?: string
+}
