@@ -19,11 +19,16 @@ import ProfilePage from './pages/account/profile'
 import ChangeEmailPage from './pages/account/change-email'
 import ChangePasswordPage from './pages/account/change-password'
 import MyWorkshopsPage from './pages/account/workshops'
+import MyOrdersPage from './pages/account/orders'
+import OrderDetailPage from './pages/account/orders/detail'
+import TransactionsPage from './pages/account/transactions'
 
 import HomePage from './pages/home'
 import ProductsPage from './pages/products'
 import ProductDetailPage from './pages/product-detail'
 import CartPage from './pages/cart'
+import CheckoutPage from './pages/checkout'
+import PaymentResultPage from './pages/payment-result'
 import WorkshopsPage from './pages/workshops'
 import WorkshopDetailPage from './pages/workshop-detail'
 import NotFoundPage from './pages/not-found'
@@ -109,6 +114,26 @@ function App() {
           }
         />
 
+        {/* US-14 — đặt hàng cần đăng nhập; trang kết quả nhận khách quay về từ cổng thanh toán */}
+        <Route
+          path='/checkout'
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <CheckoutPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path='/payment/result'
+          element={
+            <AppLayout>
+              <PaymentResultPage />
+            </AppLayout>
+          }
+        />
+
         {/* US-01, US-02, US-03 — chỉ dành cho khách chưa đăng nhập */}
         <Route
           path='/login'
@@ -158,6 +183,11 @@ function App() {
           <Route index element={<ProfilePage />} />
           <Route path='email' element={<ChangeEmailPage />} />
           <Route path='password' element={<ChangePasswordPage />} />
+          {/* US-15 — đơn hàng của tôi */}
+          <Route path='orders' element={<MyOrdersPage />} />
+          <Route path='orders/:id' element={<OrderDetailPage />} />
+          {/* US-17 — lịch sử giao dịch */}
+          <Route path='transactions' element={<TransactionsPage />} />
           {/* US-13 — lịch workshop của tôi */}
           <Route path='workshops' element={<MyWorkshopsPage />} />
         </Route>

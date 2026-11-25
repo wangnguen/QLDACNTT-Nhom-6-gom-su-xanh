@@ -4,6 +4,8 @@ import { logger } from '@common/config'
 import { slugify } from '@common/utils/slug'
 
 import { Category } from '@entities/category.entity'
+import { PostCategory } from '@entities/post-category.entity'
+import { Post } from '@entities/post.entity'
 import { Product } from '@entities/product.entity'
 import { Workshop } from '@entities/workshop.entity'
 
@@ -415,13 +417,75 @@ const SAMPLE_WORKSHOPS: SampleWorkshop[] = [
 
 // Thêm danh mục, sản phẩm và lớp workshop mẫu. Chạy lại nhiều lần cũng được: mục nào đã có (theo slug) thì giữ nguyên,
 // chỉ điền ảnh mẫu khi mục đó chưa có ảnh (ảnh admin đã sửa không bị ghi đè)
+// US-23: Bài viết mẫu cho trang tin tức (nội dung: đoạn cách nhau bởi dòng trống, "## " là tiêu đề mục)
+const SAMPLE_BLOG: {
+  name: string
+  description: string
+  posts: Pick<Post, 'title' | 'excerpt' | 'content' | 'coverImageUrl'>[]
+}[] = [
+  {
+    name: 'Kiến thức gốm',
+    description: 'Cách nhận biết men, cách dùng và bảo quản đồ gốm',
+    posts: [
+      {
+        title: 'Phân biệt men lam và men rạn Bát Tràng',
+        excerpt: 'Hai dòng men nổi tiếng nhất của làng gốm và cách nhận biết bằng mắt thường.',
+        coverImageUrl: wiki(
+          'a/af/Vase%2C_Bat_Trang_ceramic_with_blue_glaze_-_Nguyen_dynasty%2C_19th_century_AD_-_Vietnam_National_Museum_of_Fine_Arts_-_Hanoi%2C_Vietnam_-_DSC05325.JPG/960px-Vase%2C_Bat_Trang_ceramic_with_blue_glaze_-_Nguyen_dynasty%2C_19th_century_AD_-_Vietnam_National_Museum_of_Fine_Arts_-_Hanoi%2C_Vietnam_-_DSC05325.JPG'
+        ),
+        content: [
+          'Men lam và men rạn là hai dòng men được khách hỏi nhiều nhất mỗi khi ghé xưởng. Cả hai đều nung ở nhiệt độ cao nhưng cho cảm giác rất khác nhau khi cầm trên tay.',
+          '## Men lam',
+          'Hoạ tiết được vẽ bằng ô-xít coban lên xương gốm mộc, sau đó phủ một lớp men trong. Khi nung ở khoảng 1.300°C, coban chuyển sang sắc xanh lam đậm nằm dưới lớp men bóng.',
+          '## Men rạn',
+          'Men rạn tạo các vết nứt nhỏ chằng chịt trên bề mặt do lớp men và xương gốm co ngót khác nhau khi nguội. Nghệ nhân thường xoa mực hoặc chè vào vết rạn để nổi rõ hoa văn.',
+          '## Nhận biết nhanh',
+          'Đưa sản phẩm ra ánh sáng tự nhiên: men lam có hoạ tiết nằm dưới lớp men trong, sờ thấy nhẵn; men rạn có các đường nứt mảnh, sờ vẫn trơn nhưng nhìn kỹ thấy mạng lưới vết rạn.'
+        ].join('\n\n')
+      },
+      {
+        title: 'Cách bảo quản đồ gốm dùng hằng ngày',
+        excerpt: null,
+        coverImageUrl: null,
+        content: [
+          'Đồ gốm men tốt có thể dùng hàng chục năm nếu được chăm sóc đúng cách. Dưới đây là vài lưu ý đơn giản cho cốc, bát, đĩa dùng hằng ngày.',
+          '## Rửa và lau khô',
+          'Rửa bằng nước ấm và nước rửa chén thông thường, tránh miếng rửa kim loại làm xước men. Lau khô hoặc úp ráo trước khi cất để không đọng nước ở chân đế.',
+          '## Tránh sốc nhiệt',
+          'Không rót nước sôi vào cốc vừa lấy từ tủ lạnh và không cho gốm men rạn vào lò vi sóng. Thay đổi nhiệt độ đột ngột có thể làm nứt xương gốm.'
+        ].join('\n\n')
+      }
+    ]
+  },
+  {
+    name: 'Câu chuyện làng nghề',
+    description: 'Nghệ nhân và làng gốm Bát Tràng',
+    posts: [
+      {
+        title: 'Một ngày với nghệ nhân vuốt gốm',
+        excerpt: 'Theo chân nghệ nhân Lê Văn Thành từ lúc nhào đất tới khi mẻ gốm ra lò.',
+        coverImageUrl: wiki('2/2f/Gom-su-vu-hoa.jpg/960px-Gom-su-vu-hoa.jpg'),
+        content: [
+          'Năm giờ sáng, xưởng đã sáng đèn. Việc đầu tiên của nghệ nhân Lê Văn Thành là nhào lại mẻ đất ủ từ hôm trước cho thật dẻo và không còn bọt khí.',
+          '## Trên bàn xoay',
+          'Mỗi chiếc bình bắt đầu bằng thao tác định tâm khối đất. Chỉ cần lệch vài milimét, thành bình sẽ mỏng dày không đều và dễ sập khi vuốt cao.',
+          '## Chờ lò',
+          'Sản phẩm phơi khô vài ngày rồi mới vào lò. Mẻ nung kéo dài gần một ngày đêm, và người thợ gần như thức trắng để canh lửa.'
+        ].join('\n\n')
+      }
+    ]
+  }
+]
+
 const seedSample = async () => {
   const dataSource = await AppDataSource.connect()
   const categoryRepo = dataSource.getRepository(Category)
   const productRepo = dataSource.getRepository(Product)
   const workshopRepo = dataSource.getRepository(Workshop)
+  const postCategoryRepo = dataSource.getRepository(PostCategory)
+  const postRepo = dataSource.getRepository(Post)
 
-  const stats = { categories: 0, products: 0, workshops: 0, images: 0 }
+  const stats = { categories: 0, products: 0, workshops: 0, images: 0, posts: 0 }
 
   for (const { products, ...categoryData } of SAMPLE_CATALOG) {
     const categorySlug = slugify(categoryData.name)
@@ -455,9 +519,26 @@ const seedSample = async () => {
     stats.workshops++
   }
 
+  for (const { posts, ...categoryData } of SAMPLE_BLOG) {
+    const categorySlug = slugify(categoryData.name)
+    const category =
+      (await postCategoryRepo.findOne({ where: { slug: categorySlug } })) ??
+      (await postCategoryRepo.save(postCategoryRepo.create({ ...categoryData, slug: categorySlug })))
+
+    for (const postData of posts) {
+      const slug = slugify(postData.title)
+      if (await postRepo.exists({ where: { slug } })) continue
+
+      await postRepo.save(
+        postRepo.create({ ...postData, slug, categoryId: category.id, status: 'published', publishedAt: new Date() })
+      )
+      stats.posts++
+    }
+  }
+
   logger.info(
     `Sample data: ${stats.categories} new categories, ${stats.products} new products, ` +
-      `${stats.workshops} new workshops, ${stats.images} items got images`
+      `${stats.workshops} new workshops, ${stats.posts} new posts, ${stats.images} items got images`
   )
   await dataSource.destroy()
 }

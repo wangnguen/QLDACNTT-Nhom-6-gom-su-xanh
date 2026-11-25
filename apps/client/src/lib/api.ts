@@ -34,7 +34,22 @@ export type {
   WorkshopRef,
   WorkshopRegistration,
   CreateRegistrationRequest,
-  MyRegistrationQuery
+  MyRegistrationQuery,
+  OrderStatus,
+  PaymentMethod,
+  PaymentStatus,
+  ShippingCarrier,
+  OrderLine,
+  OrderDetail,
+  CheckoutRequest,
+  CheckoutResult,
+  PaymentMethodOption,
+  TransactionType,
+  TransactionStatus,
+  Transaction,
+  PaymentResult,
+  MyOrderQuery,
+  MyTransactionQuery
 } from './types'
 
 export { authService } from './services/auth.service'
@@ -44,3 +59,5 @@ export { categoriesService } from './services/categories.service'
 export { cartService } from './services/cart.service'
 export { workshopsService } from './services/workshops.service'
 export { registrationsService } from './services/registrations.service'
+export { ordersService } from './services/orders.service'
+export { paymentsService } from './services/payments.service'

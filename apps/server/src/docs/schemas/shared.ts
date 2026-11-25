@@ -389,3 +389,90 @@ export const AdminOrderDetailSchema = registry.register(
   'AdminOrderDetail',
   AdminOrderSchema.extend({ transactions: z.array(TransactionSchema) })
 )
+
+// ─── Tin tức / blog ──────────────────────────────────────────────────────────
+
+export const PostCategoryRefSchema = registry.register(
+  'PostCategoryRef',
+  z.object({
+    id: z.string().uuid().meta({ example: 'd4e5f6a7-b8c9-4d0e-8f1a-2b3c4d5e6f70' }),
+    name: z.string().meta({ example: 'Kiến thức gốm' }),
+    slug: z.string().meta({ example: 'kien-thuc-gom' })
+  })
+)
+
+export const PostCategoryItemSchema = registry.register(
+  'PostCategoryItem',
+  PostCategoryRefSchema.extend({
+    description: z.string().nullable().meta({ example: 'Cách nhận biết men, cách dùng và bảo quản đồ gốm' }),
+    isActive: z.boolean().meta({ example: true }),
+    postCount: z.number().int().meta({ example: 6 })
+  })
+)
+
+export const PostSummarySchema = registry.register(
+  'PostSummary',
+  z.object({
+    id: z.string().uuid().meta({ example: 'e5f6a7b8-c9d0-4e1f-8a2b-3c4d5e6f7a80' }),
+    title: z.string().meta({ example: 'Phân biệt men lam và men rạn Bát Tràng' }),
+    slug: z.string().meta({ example: 'phan-biet-men-lam-va-men-ran-bat-trang' }),
+    excerpt: z
+      .string()
+      .meta({ example: 'Hai dòng men nổi tiếng nhất của làng gốm và cách nhận biết bằng mắt thường.' }),
+    coverImageUrl: z.string().url().nullable().meta({ example: 'https://example.com/images/men-lam.jpg' }),
+    category: PostCategoryRefSchema,
+    status: z.enum(['draft', 'published']).meta({ example: 'published' }),
+    publishedAt: z.string().datetime().nullable().meta({ example: '2026-11-20T03:00:00.000Z' }),
+    readingMinutes: z.number().int().meta({ example: 4, description: 'Ước lượng thời gian đọc (phút)' }),
+    viewCount: z.number().int().meta({ example: 128 }),
+    author: z
+      .object({ id: z.string().uuid(), fullName: z.string() })
+      .nullable()
+      .meta({ example: { id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', fullName: 'Quản trị viên' } }),
+    updatedAt: z.string().datetime().meta({ example: '2026-11-20T03:00:00.000Z' })
+  })
+)
+
+export const PostDetailSchema = registry.register(
+  'PostDetail',
+  PostSummarySchema.extend({
+    content: z.string().meta({
+      example:
+        'Men lam là lớp men trong phủ trên hoạ tiết vẽ bằng ô-xít coban.\n\n## Men rạn\n\nMen rạn tạo các vết nứt nhỏ...',
+      description: 'Đoạn văn cách nhau bởi dòng trống; dòng bắt đầu bằng "## " là tiêu đề mục'
+    }),
+    customExcerpt: z
+      .string()
+      .nullable()
+      .meta({ example: null, description: 'Tóm tắt admin nhập (null = tự lấy từ nội dung)' })
+  })
+)
+
+// ─── Đánh giá sản phẩm ───────────────────────────────────────────────────────
+
+export const ReviewItemSchema = registry.register(
+  'ReviewItem',
+  z.object({
+    id: z.string().uuid().meta({ example: 'f6a7b8c9-d0e1-4f2a-8b3c-4d5e6f7a8b90' }),
+    rating: z.number().int().min(1).max(5).meta({ example: 5 }),
+    comment: z.string().nullable().meta({ example: 'Men lam rất đẹp, đóng gói cẩn thận, giao nhanh.' }),
+    authorName: z.string().meta({ example: 'Nguyễn Văn An' }),
+    createdAt: z.string().datetime().meta({ example: '2026-11-22T08:00:00.000Z' }),
+    updatedAt: z.string().datetime().meta({ example: '2026-11-22T08:00:00.000Z' }),
+    adminReply: z.string().nullable().meta({ example: 'Cảm ơn anh đã ủng hộ cửa hàng!' }),
+    repliedAt: z.string().datetime().nullable().meta({ example: '2026-11-22T09:00:00.000Z' })
+  })
+)
+
+export const RatingSummarySchema = registry.register(
+  'RatingSummary',
+  z.object({
+    average: z
+      .number()
+      .meta({ example: 4.6, description: 'Điểm trung bình (1 chữ số thập phân), 0 khi chưa có đánh giá' }),
+    count: z.number().int().meta({ example: 12 }),
+    distribution: z
+      .record(z.enum(['1', '2', '3', '4', '5']), z.number().int())
+      .meta({ example: { 1: 0, 2: 0, 3: 1, 4: 3, 5: 8 } })
+  })
+)

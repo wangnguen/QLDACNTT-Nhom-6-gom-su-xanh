@@ -12,8 +12,15 @@ import AdminOrderRoute from '@modules/order/order.admin.route'
 import OrderRoute from '@modules/order/order.route'
 import AdminPaymentRoute from '@modules/payment/payment.admin.route'
 import PaymentRoute from '@modules/payment/payment.route'
+import AdminPostRoute from '@modules/post/post.admin.route'
+import PostRoute from '@modules/post/post.route'
+import AdminPostCategoryRoute from '@modules/post-category/post-category.admin.route'
+import PostCategoryRoute from '@modules/post-category/post-category.route'
 import AdminProductRoute from '@modules/product/product.admin.route'
 import ProductRoute from '@modules/product/product.route'
+import AdminReviewRoute from '@modules/review/review.admin.route'
+import ReviewRoute, { productReviewRouter } from '@modules/review/review.route'
+import AdminStatsRoute from '@modules/stats/stats.admin.route'
 import UserRoute from '@modules/user/user.route'
 import AdminWorkshopRoute from '@modules/workshop/workshop.admin.route'
 import WorkshopRoute from '@modules/workshop/workshop.route'
@@ -28,10 +35,14 @@ router.use('/auth', AuthRoute)
 router.use('/health', HealthRoute)
 router.use('/users', AuthenticateMiddleware.authenticate, UserRoute)
 router.use('/categories', CategoryRoute)
+router.use('/products/:slug/reviews', productReviewRouter)
 router.use('/products', ProductRoute)
+router.use('/reviews', AuthenticateMiddleware.authenticate, ReviewRoute)
 router.use('/cart', AuthenticateMiddleware.authenticate, CartRoute)
 router.use('/orders', AuthenticateMiddleware.authenticate, OrderRoute)
 router.use('/payments', PaymentRoute)
+router.use('/post-categories', PostCategoryRoute)
+router.use('/posts', PostRoute)
 router.use('/workshops', WorkshopRoute)
 router.use('/workshop-registrations', AuthenticateMiddleware.authenticate, WorkshopRegistrationRoute)
 
@@ -39,6 +50,10 @@ router.use('/admin/categories', ...adminOnly, AdminCategoryRoute)
 router.use('/admin/products', ...adminOnly, AdminProductRoute)
 router.use('/admin/orders', ...adminOnly, AdminOrderRoute)
 router.use('/admin/payments', ...adminOnly, AdminPaymentRoute)
+router.use('/admin/post-categories', ...adminOnly, AdminPostCategoryRoute)
+router.use('/admin/posts', ...adminOnly, AdminPostRoute)
+router.use('/admin/reviews', ...adminOnly, AdminReviewRoute)
+router.use('/admin/stats', ...adminOnly, AdminStatsRoute)
 router.use('/admin/workshops', ...adminOnly, AdminWorkshopRoute)
 router.use('/admin/workshop-registrations', ...adminOnly, AdminWorkshopRegistrationRoute)
 

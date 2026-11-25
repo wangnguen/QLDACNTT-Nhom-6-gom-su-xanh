@@ -193,3 +193,129 @@ export interface AdminRegistrationQuery {
   workshopId?: string
   status?: RegistrationStatus
 }
+
+// ─── US-18..US-20: Đơn hàng, vận chuyển, giao dịch ───────────────────────────
+
+export type OrderStatus = 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled' | 'returned'
+export type PaymentMethod = 'cod' | 'vnpay'
+export type PaymentStatus = 'unpaid' | 'paid' | 'refund_pending' | 'refunded'
+export type ShippingCarrier = 'ghn' | 'ghtk' | 'viettel_post' | 'vnpost' | 'jt' | 'shop'
+export type TransactionType = 'payment' | 'refund'
+export type TransactionStatus = 'pending' | 'success' | 'failed'
+// Trạng thái admin chuyển sang ở trang đơn hàng
+export type OrderAction = 'confirmed' | 'cancelled'
+
+export interface OrderLine {
+  id: string
+  productId: string | null
+  productName: string
+  productSlug: string
+  imageUrl: string | null
+  unitPrice: number
+  quantity: number
+  lineTotal: number
+}
+
+export interface OrderCustomer {
+  id: string
+  fullName: string
+  email: string
+  phone: string | null
+}
+
+export interface AdminOrder {
+  id: string
+  code: string
+  status: OrderStatus
+  paymentMethod: PaymentMethod
+  paymentStatus: PaymentStatus
+  subtotal: number
+  shippingFee: number
+  total: number
+  itemCount: number
+  items: OrderLine[]
+  recipientName: string
+  recipientPhone: string
+  shippingAddress: string
+  note: string | null
+  placedAt: string
+  paidAt: string | null
+  confirmedAt: string | null
+  cancelReason: string | null
+  cancelledBy: 'user' | 'admin' | null
+  cancelledAt: string | null
+  shippingCarrier: ShippingCarrier | null
+  trackingCode: string | null
+  shippedAt: string | null
+  deliveredAt: string | null
+  returnedAt: string | null
+  deliveryNote: string | null
+  customer: OrderCustomer
+}
+
+export interface Transaction {
+  id: string
+  code: string
+  type: TransactionType
+  method: PaymentMethod
+  amount: number
+  status: TransactionStatus
+  gatewayTransactionNo: string | null
+  bankCode: string | null
+  responseCode: string | null
+  message: string
+  note: string | null
+  createdAt: string
+  completedAt: string | null
+  order: Pick<AdminOrder, 'id' | 'code' | 'status' | 'total'>
+}
+
+export interface AdminOrderDetail extends AdminOrder {
+  transactions: Transaction[]
+}
+
+export interface AdminOrderQuery {
+  limit?: number
+  offset?: number
+  search?: string
+  status?: OrderStatus
+  paymentStatus?: PaymentStatus
+  paymentMethod?: PaymentMethod
+  shippingCarrier?: ShippingCarrier
+  // YYYY-MM-DD (giờ Việt Nam)
+  from?: string
+  to?: string
+}
+
+// US-19: Mỗi thao tác vận chuyển một bước
+export type ShipmentBody =
+  | { action: 'ship' | 'update'; shippingCarrier: ShippingCarrier; trackingCode: string | null }
+  | { action: 'deliver' }
+  | { action: 'return'; reason: string }
+
+// ─── US-20: Giao dịch thanh toán ─────────────────────────────────────────────
+
+export interface AdminTransaction extends Transaction {
+  customer: OrderCustomer
+}
+
+export interface AdminTransactionQuery {
+  limit?: number
+  offset?: number
+  search?: string
+  type?: TransactionType
+  status?: TransactionStatus
+  method?: PaymentMethod
+  from?: string
+  to?: string
+}
+
+export interface TransactionSummary {
+  receivedAmount: number
+  receivedCount: number
+  refundedAmount: number
+  refundedCount: number
+  pendingRefundAmount: number
+  pendingRefundCount: number
+  failedCount: number
+}

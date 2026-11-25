@@ -15,6 +15,10 @@ import ProductFormPage from './pages/products/form'
 import WorkshopsPage from './pages/workshops'
 import WorkshopFormPage from './pages/workshops/form'
 import WorkshopRegistrationsPage from './pages/workshop-registrations'
+import OrdersPage from './pages/orders'
+import OrderDetailPage from './pages/orders/detail'
+import ShippingPage from './pages/shipping'
+import PaymentsPage from './pages/payments'
 import NotFoundPage from './pages/not-found'
 
 function App() {
@@ -65,6 +69,16 @@ function App() {
 
           {/* US-13: Quản lý đăng ký workshop */}
           <Route path='/workshop-registrations' element={<WorkshopRegistrationsPage />} />
+
+          {/* US-18: Quản lý đơn hàng */}
+          <Route path='/orders' element={<OrdersPage />} />
+          <Route path='/orders/:id' element={<OrderDetailPage />} />
+
+          {/* US-19: Quản lý vận chuyển */}
+          <Route path='/shipping' element={<ShippingPage />} />
+
+          {/* US-20: Quản lý giao dịch thanh toán */}
+          <Route path='/payments' element={<PaymentsPage />} />
         </Route>
 
         <Route path='*' element={<NotFoundPage />} />
