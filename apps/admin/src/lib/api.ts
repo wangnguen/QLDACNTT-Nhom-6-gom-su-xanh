@@ -44,7 +44,21 @@ export type {
   ShipmentBody,
   AdminTransaction,
   AdminTransactionQuery,
-  TransactionSummary
+  TransactionSummary,
+  PostCategoryRef,
+  PostCategoryItem,
+  PostCategoryPayload,
+  PostStatus,
+  PostSummary,
+  PostDetail,
+  AdminPostQuery,
+  PostPayload,
+  ReviewStatus,
+  AdminReview,
+  AdminReviewQuery,
+  StatsGroupBy,
+  RevenueSummary,
+  RevenueStats
 } from './types'
 
 export { authService } from './services/auth.service'
@@ -55,3 +69,7 @@ export { workshopsService } from './services/workshops.service'
 export { registrationsService } from './services/registrations.service'
 export { ordersService } from './services/orders.service'
 export { paymentsService } from './services/payments.service'
+export { postCategoriesService } from './services/post-categories.service'
+export { postsService } from './services/posts.service'
+export { reviewsService } from './services/reviews.service'
+export { statsService } from './services/stats.service'

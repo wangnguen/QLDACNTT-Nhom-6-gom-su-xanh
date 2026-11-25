@@ -319,3 +319,123 @@ export interface TransactionSummary {
   pendingRefundCount: number
   failedCount: number
 }
+
+// ─── US-21..US-22: Tin tức / blog ────────────────────────────────────────────
+
+export interface PostCategoryRef {
+  id: string
+  name: string
+  slug: string
+}
+
+export interface PostCategoryItem extends PostCategoryRef {
+  description: string | null
+  isActive: boolean
+  postCount: number
+}
+
+export interface PostCategoryPayload {
+  name: string
+  description: string | null
+  isActive: boolean
+}
+
+export type PostStatus = 'draft' | 'published'
+
+export interface PostSummary {
+  id: string
+  title: string
+  slug: string
+  excerpt: string
+  coverImageUrl: string | null
+  category: PostCategoryRef
+  status: PostStatus
+  publishedAt: string | null
+  readingMinutes: number
+  viewCount: number
+  author: { id: string; fullName: string } | null
+  updatedAt: string
+}
+
+export interface PostDetail extends PostSummary {
+  content: string
+  // Tóm tắt admin nhập (null = tự lấy từ nội dung)
+  customExcerpt: string | null
+}
+
+export interface AdminPostQuery {
+  limit?: number
+  offset?: number
+  search?: string
+  categoryId?: string
+  status?: PostStatus
+}
+
+export interface PostPayload {
+  title: string
+  excerpt: string | null
+  content: string
+  coverImageUrl: string | null
+  categoryId: string
+  status: PostStatus
+}
+
+// ─── US-25: Đánh giá sản phẩm ────────────────────────────────────────────────
+
+export type ReviewStatus = 'visible' | 'hidden'
+
+export interface AdminReview {
+  id: string
+  rating: number
+  comment: string | null
+  authorName: string
+  createdAt: string
+  updatedAt: string
+  adminReply: string | null
+  repliedAt: string | null
+  isHidden: boolean
+  product: { id: string; name: string; slug: string; imageUrl: string | null }
+  customer: { id: string; fullName: string; email: string }
+  orderCode: string | null
+}
+
+export interface AdminReviewQuery {
+  limit?: number
+  offset?: number
+  search?: string
+  rating?: number
+  status?: ReviewStatus
+  productId?: string
+}
+
+// ─── US-26: Thống kê doanh thu ───────────────────────────────────────────────
+
+export type StatsGroupBy = 'day' | 'month'
+
+export interface RevenueSummary {
+  revenue: number
+  deliveredOrders: number
+  averageOrderValue: number
+  newOrders: number
+  cancelledOrders: number
+  refundedAmount: number
+  workshopRevenue: number
+}
+
+export interface RevenueStats {
+  from: string
+  to: string
+  groupBy: StatsGroupBy
+  summary: RevenueSummary
+  previous: RevenueSummary
+  series: { period: string; revenue: number; orders: number }[]
+  topProducts: {
+    productId: string | null
+    name: string
+    slug: string
+    imageUrl: string | null
+    quantity: number
+    revenue: number
+  }[]
+  byPaymentMethod: { method: PaymentMethod; revenue: number; orders: number }[]
+}

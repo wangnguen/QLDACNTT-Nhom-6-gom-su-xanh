@@ -49,7 +49,15 @@ export type {
   Transaction,
   PaymentResult,
   MyOrderQuery,
-  MyTransactionQuery
+  MyTransactionQuery,
+  PostCategoryItem,
+  PostSummary,
+  PostDetail,
+  PostQuery,
+  ReviewItem,
+  RatingSummary,
+  ProductReviews,
+  MyReviewStatus
 } from './types'
 
 export { authService } from './services/auth.service'
@@ -61,3 +69,5 @@ export { workshopsService } from './services/workshops.service'
 export { registrationsService } from './services/registrations.service'
 export { ordersService } from './services/orders.service'
 export { paymentsService } from './services/payments.service'
+export { postsService } from './services/posts.service'
+export { reviewsService } from './services/reviews.service'

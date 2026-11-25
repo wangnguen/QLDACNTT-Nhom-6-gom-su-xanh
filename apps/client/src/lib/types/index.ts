@@ -352,3 +352,73 @@ export interface MyTransactionQuery {
   status?: TransactionStatus
   orderId?: string
 }
+
+// ─── US-23: Tin tức / blog ───────────────────────────────────────────────────
+
+export interface PostCategoryItem {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  isActive: boolean
+  // Số bài đã đăng
+  postCount: number
+}
+
+export interface PostSummary {
+  id: string
+  title: string
+  slug: string
+  excerpt: string
+  coverImageUrl: string | null
+  category: Pick<PostCategoryItem, 'id' | 'name' | 'slug'>
+  publishedAt: string | null
+  readingMinutes: number
+  viewCount: number
+  author: { id: string; fullName: string } | null
+}
+
+export interface PostDetail extends PostSummary {
+  // Đoạn cách nhau bởi dòng trống, dòng bắt đầu bằng "## " là tiêu đề mục
+  content: string
+  // Tóm tắt admin tự nhập (null = tóm tắt lấy từ đầu nội dung)
+  customExcerpt: string | null
+  related: PostSummary[]
+}
+
+export interface PostQuery {
+  limit?: number
+  offset?: number
+  // Slug danh mục
+  category?: string
+  search?: string
+}
+
+// ─── US-24: Đánh giá sản phẩm ────────────────────────────────────────────────
+
+export interface ReviewItem {
+  id: string
+  rating: number
+  comment: string | null
+  authorName: string
+  createdAt: string
+  updatedAt: string
+  adminReply: string | null
+  repliedAt: string | null
+}
+
+export interface RatingSummary {
+  average: number
+  count: number
+  distribution: Record<'1' | '2' | '3' | '4' | '5', number>
+}
+
+export interface ProductReviews extends Paginated<ReviewItem> {
+  summary: RatingSummary
+}
+
+export interface MyReviewStatus {
+  canReview: boolean
+  reason: string | null
+  review: (ReviewItem & { isHidden: boolean }) | null
+}

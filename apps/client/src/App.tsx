@@ -31,6 +31,8 @@ import CheckoutPage from './pages/checkout'
 import PaymentResultPage from './pages/payment-result'
 import WorkshopsPage from './pages/workshops'
 import WorkshopDetailPage from './pages/workshop-detail'
+import BlogPage from './pages/blog'
+import BlogDetailPage from './pages/blog-detail'
 import NotFoundPage from './pages/not-found'
 
 function App() {
@@ -98,6 +100,24 @@ function App() {
           element={
             <AppLayout>
               <WorkshopDetailPage />
+            </AppLayout>
+          }
+        />
+
+        {/* US-23 — tin tức / blog không cần đăng nhập */}
+        <Route
+          path='/blog'
+          element={
+            <AppLayout>
+              <BlogPage />
+            </AppLayout>
+          }
+        />
+        <Route
+          path='/blog/:slug'
+          element={
+            <AppLayout>
+              <BlogDetailPage />
             </AppLayout>
           }
         />

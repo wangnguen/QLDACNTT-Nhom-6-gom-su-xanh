@@ -4,9 +4,11 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardList,
+  FolderKanban,
   FolderTree,
   LayoutDashboard,
   LogOut,
+  MessageSquareText,
   Package,
   ReceiptText,
   Truck,
@@ -26,14 +28,14 @@ const NAV_ITEMS = [
   { to: '/workshop-registrations', label: 'Đăng ký workshop', icon: ClipboardList, end: false },
   { to: '/orders', label: 'Đơn hàng', icon: ReceiptText, end: false },
   { to: '/shipping', label: 'Vận chuyển', icon: Truck, end: false },
-  { to: '/payments', label: 'Giao dịch', icon: WalletCards, end: false }
+  { to: '/payments', label: 'Giao dịch', icon: WalletCards, end: false },
+  { to: '/reviews', label: 'Đánh giá', icon: MessageSquareText, end: false },
+  { to: '/posts', label: 'Bài viết', icon: BookOpen, end: false },
+  { to: '/post-categories', label: 'Danh mục bài viết', icon: FolderKanban, end: false }
 ]
 
 // Các module sẽ làm ở sprint sau — hiển thị trước để định hình bố cục
-const UPCOMING_ITEMS = [
-  { label: 'Bài viết', icon: BookOpen },
-  { label: 'Khách hàng', icon: Users }
-]
+const UPCOMING_ITEMS = [{ label: 'Khách hàng', icon: Users }]
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuthStore()

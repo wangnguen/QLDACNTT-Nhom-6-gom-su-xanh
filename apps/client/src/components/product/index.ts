@@ -1,4 +1,5 @@
 export { ProductCard, ProductCardSkeleton } from './ProductCard'
 export { ProductImage } from './ProductImage'
 export { QuantityStepper } from './QuantityStepper'
+export { StarInput, StarRating } from './StarRating'
 export { ProductGallery } from './ProductGallery'
