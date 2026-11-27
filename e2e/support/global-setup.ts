@@ -66,7 +66,8 @@ const recreateDatabase = async (pg: EmbeddedPostgres) => {
   await client.connect()
   try {
     await client.query(`DROP DATABASE IF EXISTS ${DB_NAME} WITH (FORCE)`)
-    await client.query(`CREATE DATABASE ${DB_NAME}`)
+    // Windows clusters can default to WIN1252; Vietnamese test data requires UTF-8.
+    await client.query(`CREATE DATABASE ${DB_NAME} WITH TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C'`)
   } finally {
     await client.end()
   }
